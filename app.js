@@ -317,9 +317,21 @@ function updateTimers() {
   tasks.forEach(task => {
     const cell = els.list.querySelector(`[data-timer="${task.id}"]`);
     if (!cell) return;
-    const { text, cls } = computeTimer(task, now);
-    cell.textContent = text;
-    cell.className = "timer-cell" + (cls ? " " + cls : "");
+    const { text, num, cls } = computeTimer(task, now);
+    cell.className = "timer-cell";
+    cell.innerHTML = "";
+    if (text) {
+      const t = document.createElement("span");
+      t.className = "timer-text";
+      t.textContent = text;
+      cell.appendChild(t);
+    }
+    if (num) {
+      const n = document.createElement("span");
+      n.className = "timer-num" + (cls ? " " + cls : "");
+      n.textContent = num;
+      cell.appendChild(n);
+    }
   });
 }
 
@@ -327,7 +339,7 @@ function computeTimer(task, now) {
   if (task.type === "countdown") {
     const end = (task.createdAt || now) + task.cdValue * unitMs(task.cdUnit);
     const remain = end - now;
-    if (remain <= 0) return { text: "已结束", cls: "is-done" };
+    if (remain <= 0) return { text: "已结束", num: "", cls: "is-done" };
 
     const parts = [];
     let r = remain;
@@ -341,7 +353,7 @@ function computeTimer(task, now) {
     if (m > 0 || h > 0 || d > 0) parts.push(`${m}分`);
     parts.push(`${s}秒`);
 
-    return { text: "剩余 " + parts.join(" "), cls: "" };
+    return { text: "剩余 ", num: parts.join(" "), cls: "" };
   }
 
   if (task.type === "birthday") {
@@ -349,8 +361,8 @@ function computeTimer(task, now) {
     const years = (now - born.getTime()) / unitMs("year");
     const yLabel = years >= 1 ? `（${Math.floor(years)}年）` : "";
     const next = nextBirthday(born, now);
-    if (next.diff === 0) return { text: `${yLabel}纪念日快乐 🎂`, cls: "is-birthday" };
-    return { text: `${yLabel}距纪念日 ${next.diff} 天`, cls: levelCls(next.diff) };
+    if (next.diff === 0) return { text: `${yLabel}纪念日快乐 🎂`, num: "", cls: "is-birthday" };
+    return { text: `${yLabel}距纪念日 `, num: `${next.diff} 天`, cls: levelCls(next.diff) };
   }
 
   // 倒数日（固定目标日期，可过去可未来）
@@ -358,10 +370,10 @@ function computeTimer(task, now) {
   const diff = target - now;
   const days = Math.floor(Math.abs(diff) / (24 * 3600 * 1000));
   if (diff >= 0) {
-    if (days === 0) return { text: "今天到期", cls: "is-today" };
-    return { text: `距倒数日 ${days} 天`, cls: levelCls(days) };
+    if (days === 0) return { text: "今天到期", num: "", cls: "is-today" };
+    return { text: "距倒数日 ", num: `${days} 天`, cls: levelCls(days) };
   }
-  return { text: `已过期 ${days} 天`, cls: "is-over" };
+  return { text: "已过期 ", num: `${days} 天`, cls: "is-over" };
 }
 
 // 按剩余天数返回颜色分级：>30 绿 / 10-30 橙 / <10 红；type 决定文案前缀由调用方处理
