@@ -108,17 +108,22 @@ body {
 [data-theme="dark"] .btn-ghost { background: #334155; color: var(--text-soft); }
 [data-theme="dark"] .btn-ghost:hover { background: #475569; }
 
+/* ===== 顶部信息容器（当日信息 + 每日一言） ===== */
+.infobar {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
 /* ===== 今日日期/农历/节气/节日信息条（单行） ===== */
 .dayinfo {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 10px 12px;
-  background: var(--surface);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
   padding: 14px 22px;
-  margin-bottom: 18px;
 }
 .di-seg { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; line-height: 1.2; }
 .di-solar { font-weight: 600; letter-spacing: 0.3px; }
@@ -167,13 +172,9 @@ body {
   display: flex;
   align-items: baseline;
   gap: 10px;
-  background: var(--surface);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 14px 22px;
-  margin-bottom: 18px;
+  padding: 12px 22px 14px;
+  border-top: 1px solid var(--border);
   border-left: 4px solid var(--primary-strong);
-  overflow: hidden;
 }
 .daily-quote .dq-mark {
   font-size: 30px; line-height: 1;

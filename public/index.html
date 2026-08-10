@@ -38,20 +38,23 @@
       </div>
     </header>
 
-    <!-- 当天公历/农历/节气/节日信息条（单行：公历 · 农历 · 节日/节气） -->
-    <section class="dayinfo" id="dayInfo" aria-label="今日日期与农历节气信息">
-      <span class="di-seg di-solar" id="diSolar"></span>
-      <span class="di-sep"></span>
-      <span class="di-seg di-lunar" id="diLunar"></span>
-      <span class="di-sep"></span>
-      <span class="di-seg di-tags" id="diTags"></span>
-    </section>
+    <!-- 顶部信息容器：当日信息 + 每日一言 -->
+    <section class="infobar" aria-label="今日信息与每日一言">
+      <!-- 当天公历/农历/节气/节日信息条（单行：公历 · 农历 · 节日/节气） -->
+      <div class="dayinfo" id="dayInfo">
+        <span class="di-seg di-solar" id="diSolar"></span>
+        <span class="di-sep"></span>
+        <span class="di-seg di-lunar" id="diLunar"></span>
+        <span class="di-sep"></span>
+        <span class="di-seg di-tags" id="diTags"></span>
+      </div>
 
-    <!-- 每日一言 -->
-    <section class="daily-quote" id="dailyQuote" aria-label="每日一言">
-      <span class="dq-mark">“</span>
-      <span class="dq-text" id="dqText"></span>
-      <span class="dq-from" id="dqFrom"></span>
+      <!-- 每日一言 -->
+      <div class="daily-quote" id="dailyQuote">
+        <span class="dq-mark">“</span>
+        <span class="dq-text" id="dqText"></span>
+        <span class="dq-from" id="dqFrom"></span>
+      </div>
     </section>
 
     <!-- 任务列表卡片 -->
