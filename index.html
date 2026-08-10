@@ -31,6 +31,9 @@
         <button id="addBtn" class="btn btn-primary">
           <span class="plus">+</span> 添加任务
         </button>
+        <button id="dataBtn" class="btn btn-ghost" type="button" title="数据管理">
+          <span class="db-icon">🗄️</span> 数据管理
+        </button>
       </div>
     </header>
 
@@ -118,6 +121,38 @@
           <button type="submit" class="btn btn-primary">保存</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- 数据管理弹窗 -->
+  <div id="dataModal" class="modal" hidden>
+    <div class="modal-overlay" data-close="data"></div>
+    <div class="modal-card" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h2>数据管理</h2>
+        <button class="modal-close" data-close="data" aria-label="关闭">×</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="data-hint">当前共 <span id="dataCount">0</span> 条任务</p>
+
+        <div class="field">
+          <span class="field-label">导出</span>
+          <button id="exportBtn" class="btn btn-primary" type="button">导出为 JSON 文件</button>
+        </div>
+
+        <div class="field">
+          <span class="field-label">导入（将覆盖当前全部数据）</span>
+          <div class="import-row">
+            <input type="file" id="importInput" accept="application/json,.json" class="input" hidden />
+            <button id="importPickBtn" class="btn btn-ghost" type="button">选择文件</button>
+            <span id="importFileName" class="import-file-name"></span>
+          </div>
+          <button id="importBtn" class="btn btn-primary" type="button" disabled>导入并覆盖</button>
+        </div>
+
+        <p id="dataMsg" class="data-msg" hidden></p>
+      </div>
     </div>
   </div>
 

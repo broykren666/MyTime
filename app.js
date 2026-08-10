@@ -47,6 +47,15 @@ const els = {
   themeIcon: document.getElementById("themeIcon"),
   modal: document.getElementById("modal"),
   modalTitle: document.getElementById("modalTitle"),
+  dataBtn: document.getElementById("dataBtn"),
+  dataModal: document.getElementById("dataModal"),
+  dataCount: document.getElementById("dataCount"),
+  exportBtn: document.getElementById("exportBtn"),
+  importInput: document.getElementById("importInput"),
+  importPickBtn: document.getElementById("importPickBtn"),
+  importFileName: document.getElementById("importFileName"),
+  importBtn: document.getElementById("importBtn"),
+  dataMsg: document.getElementById("dataMsg"),
   form: document.getElementById("taskForm"),
   name: document.getElementById("nameInput"),
   typeSeg: document.getElementById("typeSeg"),
@@ -253,6 +262,96 @@ function closeModal() {
   editingId = null;
 }
 
+/* ---------- 数据管理弹窗 ---------- */
+let pendingImport = null; // 待导入的已解析任务数组
+
+function openDataModal() {
+  els.dataCount.textContent = tasks.length;
+  pendingImport = null;
+  els.importInput.value = "";
+  els.importFileName.textContent = "";
+  els.importBtn.disabled = true;
+  hideDataMsg();
+  els.dataModal.hidden = false;
+}
+
+function closeDataModal() {
+  els.dataModal.hidden = true;
+}
+
+function showDataMsg(text, ok) {
+  els.dataMsg.textContent = text;
+  els.dataMsg.className = "data-msg " + (ok ? "is-ok" : "is-err");
+  els.dataMsg.hidden = false;
+}
+function hideDataMsg() {
+  els.dataMsg.hidden = true;
+  els.dataMsg.textContent = "";
+}
+
+function exportData() {
+  const payload = JSON.stringify(tasks, null, 2);
+  const blob = new Blob([payload], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
+  a.href = url;
+  a.download = `mytime-tasks-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showDataMsg(`已导出 ${tasks.length} 条任务`, true);
+}
+
+function onImportFilePicked(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!Array.isArray(data)) throw new Error("文件内容不是任务数组");
+      const valid = data
+        .filter(t => t && typeof t.id === "string")
+        .map(t => ({ ...t, type: normalizeType(t.type) }));
+      pendingImport = valid;
+      els.importFileName.textContent = `${file.name}（${valid.length} 条）`;
+      els.importBtn.disabled = valid.length === 0;
+      if (valid.length === 0) {
+        showDataMsg("文件中没有有效的任务数据", false);
+      } else {
+        hideDataMsg();
+      }
+    } catch (e) {
+      pendingImport = null;
+      els.importFileName.textContent = "";
+      els.importBtn.disabled = true;
+      showDataMsg("解析失败：" + e.message, false);
+    }
+  };
+  reader.onerror = () => {
+    pendingImport = null;
+    els.importBtn.disabled = true;
+    showDataMsg("读取文件失败", false);
+  };
+  reader.readAsText(file);
+}
+
+function doImport() {
+  if (!pendingImport) return;
+  const n = pendingImport.length;
+  if (!confirm(`确定用选中的 ${n} 条数据覆盖当前全部 ${tasks.length} 条数据吗？此操作不可撤销。`)) return;
+  tasks = pendingImport.map(t => ({ ...t }));
+  saveTasks();
+  renderList();
+  els.dataCount.textContent = tasks.length;
+  pendingImport = null;
+  els.importInput.value = "";
+  els.importFileName.textContent = "";
+  els.importBtn.disabled = true;
+  showDataMsg(`已导入并覆盖 ${n} 条任务`, true);
+}
+
 function syncTypeUI() {
   const locked = editingId !== null; // 修改模式锁定任务类型
   els.typeSeg.querySelectorAll(".seg-item").forEach(b => {
@@ -430,7 +529,18 @@ els.modal.querySelectorAll("[data-close]").forEach(el =>
 );
 document.addEventListener("keydown", e => {
   if (e.key === "Escape" && !els.modal.hidden) closeModal();
+  if (e.key === "Escape" && !els.dataModal.hidden) closeDataModal();
 });
+
+/* ---------- 数据管理事件绑定 ---------- */
+els.dataBtn.addEventListener("click", openDataModal);
+els.dataModal.querySelectorAll('[data-close="data"]').forEach(el =>
+  el.addEventListener("click", closeDataModal)
+);
+els.exportBtn.addEventListener("click", exportData);
+els.importPickBtn.addEventListener("click", () => els.importInput.click());
+els.importInput.addEventListener("change", e => onImportFilePicked(e.target.files[0]));
+els.importBtn.addEventListener("click", doImport);
 
 /* ---------- 浏览器通知 ---------- */
 function requestNotifyPermission() {

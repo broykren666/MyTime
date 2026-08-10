@@ -88,6 +88,17 @@ body {
 .btn-primary:active { transform: translateY(0); }
 .plus { font-size: 18px; line-height: 1; }
 #themeBtn { width: 42px; padding: 10px 0; justify-content: center; font-size: 16px; line-height: 1; }
+.db-icon { font-size: 15px; line-height: 1; }
+
+/* ===== 数据管理弹窗 ===== */
+.data-hint { font-size: 13px; color: var(--text-soft); }
+.import-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.import-file-name { font-size: 12.5px; color: var(--text-soft); word-break: break-all; }
+.data-msg { font-size: 13px; padding: 8px 12px; border-radius: var(--radius-sm); }
+.data-msg.is-ok { background: rgba(16, 185, 129, 0.12); color: var(--success); }
+.data-msg.is-err { background: rgba(239, 68, 68, 0.12); color: var(--danger); }
+[data-theme="dark"] .data-msg.is-ok { background: rgba(52, 211, 153, 0.15); }
+[data-theme="dark"] .data-msg.is-err { background: rgba(248, 113, 113, 0.15); }
 .btn-ghost { background: #F1F5F9; color: var(--text-soft); }
 .btn-ghost:hover { background: #E2E8F0; }
 [data-theme="dark"] .btn-ghost { background: #334155; color: var(--text-soft); }
