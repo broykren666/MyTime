@@ -100,10 +100,6 @@ body {
 }
 .cell-name { font-weight: 500; }
 .cell-time { color: var(--text-soft); white-space: nowrap; }
-.cell-desc {
-  color: var(--text-soft); max-width: 220px;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
 .timer-cell {
   font-family: var(--mono); font-size: 13.5px; font-weight: 600;
   white-space: nowrap; color: var(--primary-strong);

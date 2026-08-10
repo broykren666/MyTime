@@ -46,7 +46,6 @@ const els = {
   modalTitle: document.getElementById("modalTitle"),
   form: document.getElementById("taskForm"),
   name: document.getElementById("nameInput"),
-  desc: document.getElementById("descInput"),
   typeSeg: document.getElementById("typeSeg"),
   typeLockTip: document.getElementById("typeLockTip"),
   cdField: document.getElementById("countdownField"),
@@ -115,12 +114,6 @@ function renderList() {
     tdTimer.className = "timer-cell";
     tdTimer.dataset.timer = task.id;
 
-    // 描述
-    const tdDesc = document.createElement("td");
-    tdDesc.className = "cell-desc";
-    tdDesc.title = task.desc || "";
-    tdDesc.textContent = task.desc || "—";
-
     // 操作
     const tdOps = document.createElement("td");
     tdOps.className = "col-ops";
@@ -135,7 +128,7 @@ function renderList() {
     ops.append(up, down, edit, del);
     tdOps.appendChild(ops);
 
-    tr.append(tdIdx, tdName, tdTime, tdTimer, tdDesc, tdOps);
+    tr.append(tdIdx, tdName, tdTime, tdTimer, tdOps);
     els.list.appendChild(tr);
   });
 
@@ -186,7 +179,6 @@ function openModal(id) {
     if (!task) return;
     els.modalTitle.textContent = "修改任务";
     els.name.value = task.name;
-    els.desc.value = task.desc || "";
     formType = task.type;
     if (task.type === "countdown") {
       formUnit = task.cdUnit;
@@ -254,7 +246,6 @@ function submitTask(e) {
 
   const base = {
     name,
-    desc: els.desc.value.trim(),
     type: formType,
   };
 
