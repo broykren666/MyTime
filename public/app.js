@@ -1141,9 +1141,60 @@ function toggleTheme() {
 
 els.themeBtn.addEventListener("click", toggleTheme);
 
+/* ---------- 每日一言 ---------- */
+// 内置兜底语录（API 失败时使用），hitokoto 优先
+const QUOTE_FALLBACK = [
+  { text: "千里之行，始于足下。", from: "老子" },
+  { text: "今天能做的事，不要拖到明天。", from: "谚语" },
+  { text: "种一棵树最好的时间是十年前，其次是现在。", from: "谚语" },
+  { text: "不积跬步，无以至千里。", from: "荀子" },
+  { text: "时间是一切财富中最宝贵的财富。", from: "德奥弗拉斯多" },
+  { text: "你热爱生命吗？那么别浪费时间。", from: "富兰克林" },
+  { text: "业精于勤，荒于嬉。", from: "韩愈" },
+  { text: "路漫漫其修远兮，吾将上下而求索。", from: "屈原" },
+  { text: "每一个不曾起舞的日子，都是对生命的辜负。", from: "尼采" },
+  { text: "莫等闲，白了少年头，空悲切。", from: "岳飞" }
+];
+
+function setQuote(text, from) {
+  const box = document.getElementById("dailyQuote");
+  const t = document.getElementById("dqText");
+  const f = document.getElementById("dqFrom");
+  if (!box || !t) return;
+  if (box.classList.contains("show")) box.classList.remove("show");
+  box.classList.add("fade");
+  if (f) f.textContent = from || "";
+  // 下次重绘后再淡入，保证过渡生效
+  requestAnimationFrame(() => {
+    t.textContent = text || "";
+    requestAnimationFrame(() => {
+      box.classList.remove("fade");
+      box.classList.add("show");
+    });
+  });
+}
+
+function renderDailyQuote() {
+  // 先随机取一条内置作为即时兜底（避免空白）
+  const fb = QUOTE_FALLBACK[Math.floor(Math.random() * QUOTE_FALLBACK.length)];
+  setQuote(fb.text, fb.from);
+
+  // hitokoto API 优先，成功则替换
+  fetch("https://v1.hitokoto.cn/", { cache: "no-store" })
+    .then(r => { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
+    .then(d => {
+      const text = (d.hitokoto || "").trim();
+      if (!text) return;
+      const from = [d.from, d.from_who].filter(Boolean).join("·");
+      setQuote(text, from);
+    })
+    .catch(() => { /* 失败则保留内置兜底 */ });
+}
+
 /* ---------- 启动 ---------- */
 renderList();
 renderDayInfo();
+renderDailyQuote();
 setInterval(updateTimers, 1000);
 
 // 跨天自动刷新顶部日期/农历信息：每分钟检查一次日期是否变化
