@@ -325,13 +325,12 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   background: #fff; color: var(--primary-strong);
   box-shadow: 0 2px 8px rgba(31, 41, 55, 0.12); font-weight: 600;
 }
-.seg-unit { width: 100%; justify-content: space-between; flex-wrap: wrap; }
+.seg-unit { flex: 1; }
 .seg-unit .seg-item { flex: 1; padding: 7px 0; text-align: center; }
 
 .countdown-row { display: flex; gap: 10px; align-items: stretch; }
 .cd-value { flex: 0 0 110px; }
 .fixedday-value { width: 100%; flex: none; }
-.seg-unit { flex: 1; }
 .type-lock-tip { font-size: 12px; color: var(--warning); margin-top: 2px; }
 
 /* ===== Cron 信息栏 ===== */

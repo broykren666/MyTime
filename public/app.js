@@ -110,6 +110,12 @@ const els = {
   cronField: document.getElementById("cronField"),
   cronInput: document.getElementById("cronInput"),
   cronInfo: document.getElementById("cronInfo"),
+  diSolar: document.getElementById("diSolar"),
+  diLunar: document.getElementById("diLunar"),
+  diTags: document.getElementById("diTags"),
+  dailyQuote: document.getElementById("dailyQuote"),
+  dqText: document.getElementById("dqText"),
+  dqFrom: document.getElementById("dqFrom"),
 };
 
 /* 当前表单选择的类型 / 单位（临时状态） */
@@ -672,7 +678,7 @@ function submitTask(e) {
       base.lunarYear = parseInt(els.birthdayLunarYear.value, 10) || new Date().getFullYear();
       base.lunarMonth = parseInt(els.birthdayLunarMonth.value, 10) || 1;
       base.lunarDay = parseInt(els.birthdayLunarDay.value, 10) || 1;
-      base.lunarLeap = els.birthdayLunarLeap.checked;
+      base.lunarLeap = els.birthdayLunarLeap.classList.contains("is-active");
       // 基准日：用户选择年份的农历 → 公历转换，用于年份计数
       const sd = solarFromLunar(base.lunarYear, base.lunarMonth, base.lunarDay, base.lunarLeap);
       base.birthdayValue = sd ? ymdStr(sd) : todayStr();
@@ -696,7 +702,7 @@ function submitTask(e) {
       base.lunarYear = parseInt(els.memorialLunarYear.value, 10) || new Date().getFullYear();
       base.lunarMonth = parseInt(els.memorialLunarMonth.value, 10) || 1;
       base.lunarDay = parseInt(els.memorialLunarDay.value, 10) || 1;
-      base.lunarLeap = els.memorialLunarLeap.checked;
+      base.lunarLeap = els.memorialLunarLeap.classList.contains("is-active");
       const sd = solarFromLunar(base.lunarYear, base.lunarMonth, base.lunarDay, base.lunarLeap);
       base.memorialValue = sd ? ymdStr(sd) : todayStr();
     } else {
@@ -854,6 +860,7 @@ function computeTimer(task, now) {
     }
     return { text: `已过期 ${days}天`, cls: "is-over" };
   }
+  return { text: "", cls: "" };
 }
 
 // 计算距离下一次「每月 day 日」的天数
@@ -967,8 +974,8 @@ function renderDayInfo() {
 
   // 公历 + 星期
   const week = WEEK_CN[now.getDay()];
-  const diSolar = document.getElementById("diSolar");
-  const diLunar = document.getElementById("diLunar");
+  const diSolar = els.diSolar;
+  const diLunar = els.diLunar;
   if (diSolar) diSolar.innerHTML = `${y}年${m}月${d}日<span class="di-week">${week}</span>`;
 
   // 农历（getMonthInChinese 已自动处理闰月前缀"闰"）
@@ -988,7 +995,7 @@ function renderDayInfo() {
   const jq = lunar.getJieQi();
   if (jq) tags.push({ type: "jieqi", text: jq });
 
-  const diTags = document.getElementById("diTags");
+  const diTags = els.diTags;
   if (!diTags) return;
 
   // 当天有节日/节气 -> 直接展示
@@ -1173,9 +1180,9 @@ const QUOTE_FALLBACK = [
 ];
 
 function setQuote(text, from) {
-  const box = document.getElementById("dailyQuote");
-  const t = document.getElementById("dqText");
-  const f = document.getElementById("dqFrom");
+  const box = els.dailyQuote;
+  const t = els.dqText;
+  const f = els.dqFrom;
   if (!box || !t) return;
   if (box.classList.contains("show")) box.classList.remove("show");
   box.classList.add("fade");
@@ -1209,7 +1216,7 @@ function renderDailyQuote() {
 
   // 真正优先 hitokoto：先清空（淡出），成功才显示 API 内容并写入缓存；
   // 仅 fetch 失败 / 限流 / 超时(2.5s)才回退内置兜底（兜底不写缓存，便于 1 分钟后重试 API）。
-  const box = document.getElementById("dailyQuote");
+  const box = els.dailyQuote;
   if (box) { box.classList.remove("show"); box.classList.add("fade"); }
   // 请求期间显示占位文本
   setQuote("正在获取每日一言…", "");
