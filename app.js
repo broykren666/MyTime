@@ -36,6 +36,7 @@ function saveTasks() {
 
 let tasks = loadTasks();
 let editingId = null; // null = 添加模式
+const notifiedIds = new Set(); // 已发送过结束通知的倒计时任务 id，避免每秒重复提醒
 
 /* ---------- DOM 引用 ---------- */
 const els = {
@@ -204,6 +205,7 @@ function removeTask(id) {
   if (!task) return;
   if (!confirm(`确定删除任务「${task.name}」吗？`)) return;
   tasks = tasks.filter(t => t.id !== id);
+  notifiedIds.delete(id);
   saveTasks();
   renderList();
 }
@@ -302,10 +304,15 @@ function submitTask(e) {
   if (editingId) {
     const idx = tasks.findIndex(t => t.id === editingId);
     if (idx !== -1) tasks[idx] = { ...tasks[idx], ...base };
+    if (formType === "countdown") notifiedIds.delete(editingId);
   } else {
-    tasks.push({ id: genId(), ...base });
+    const id = genId();
+    tasks.push({ id, ...base });
+    if (formType === "countdown") notifiedIds.delete(id);
   }
 
+  // 保存/添加即代表用户明确交互，借此请求通知权限
+  requestNotifyPermission();
   saveTasks();
   renderList();
   closeModal();
@@ -320,6 +327,12 @@ function updateTimers() {
     const { text, cls } = computeTimer(task, now);
     cell.textContent = text;
     cell.className = "timer-cell" + (cls ? " " + cls : "");
+
+    // 倒计时结束：发送一次浏览器通知
+    if (task.type === "countdown" && cls === "is-done" && !notifiedIds.has(task.id)) {
+      notifiedIds.add(task.id);
+      notify(task.name, "倒计时已结束");
+    }
   });
 }
 
@@ -391,7 +404,10 @@ function startOfDay(date) {
 }
 
 /* ---------- 事件绑定 ---------- */
-els.addBtn.addEventListener("click", () => openModal());
+els.addBtn.addEventListener("click", () => {
+  requestNotifyPermission();
+  openModal();
+});
 els.form.addEventListener("submit", submitTask);
 
 els.typeSeg.querySelectorAll(".seg-item").forEach(b =>
@@ -413,6 +429,23 @@ els.modal.querySelectorAll("[data-close]").forEach(el =>
 document.addEventListener("keydown", e => {
   if (e.key === "Escape" && !els.modal.hidden) closeModal();
 });
+
+/* ---------- 浏览器通知 ---------- */
+function requestNotifyPermission() {
+  if (!("Notification" in window)) return;
+  if (Notification.permission === "default") {
+    Notification.requestPermission().catch(() => {});
+  }
+}
+
+function notify(title, body) {
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  try {
+    new Notification(title, { body, tag: "mytime-cd-" + title });
+  } catch (e) {
+    console.warn("发送浏览器通知失败", e);
+  }
+}
 
 /* ---------- 启动 ---------- */
 renderList();
