@@ -109,15 +109,13 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   font-family: var(--mono); font-size: 13.5px; font-weight: 600;
   white-space: nowrap; color: var(--primary-strong);
 }
-.timer-cell .timer-text { color: var(--primary-strong); }
-.timer-cell.is-over .timer-text { color: var(--text-soft); opacity: .8; }
-.timer-cell.is-done .timer-text { color: var(--text-soft); }
-.timer-cell.is-birthday .timer-text { color: var(--warning); }
-.timer-cell.is-today .timer-text { color: var(--primary-strong); font-weight: 700; }
-.timer-cell .timer-num.is-safe { color: var(--success); }
-.timer-cell .timer-num.is-warn { color: var(--warning); }
-.timer-cell .timer-num.is-urgent { color: var(--danger); }
-.timer-cell .timer-num.is-over { color: var(--text-soft); opacity: .8; }
+.timer-cell.is-over { color: var(--text-soft); opacity: .8; }
+.timer-cell.is-done { color: var(--text-soft); }
+.timer-cell.is-birthday { color: var(--warning); }
+.timer-cell.is-today { color: var(--primary-strong); font-weight: 700; }
+.timer-cell.is-safe { color: var(--success); }
+.timer-cell.is-warn { color: var(--warning); }
+.timer-cell.is-urgent { color: var(--danger); }
 
 /* ===== 操作按钮 ===== */
 .ops { display: flex; gap: 6px; flex-wrap: wrap; }
