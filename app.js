@@ -19,7 +19,15 @@ function loadTasks() {
     if (!Array.isArray(data)) return [];
     return data
       .filter(t => t && typeof t.id === "string")
-      .map(t => ({ ...t, type: normalizeType(t.type) }));
+      .map(t => {
+        const task = { ...t, type: normalizeType(t.type) };
+        // 迁移：固定日旧数据可能用逗号分隔，统一规范化为斜杠分隔
+        if (task.type === "fixedday" && typeof task.fixeddayValue === "string") {
+          const arr = parseFixeddays(task.fixeddayValue);
+          task.fixeddayValue = arr.length ? arr.join("/") : "1";
+        }
+        return task;
+      });
   } catch (e) {
     console.warn("读取本地数据失败，已重置为空列表", e);
     return [];
@@ -35,6 +43,8 @@ function saveTasks() {
 }
 
 let tasks = loadTasks();
+// 加载后若有旧数据被规范化（如固定日逗号→斜杠），写回存储保持一致
+if (tasks.some(t => t.type === "fixedday")) saveTasks();
 let editingId = null; // null = 添加模式
 const notifiedIds = new Set(); // 已发送过结束通知的倒计时任务 id，避免每秒重复提醒
 
@@ -474,8 +484,8 @@ function computeTimer(task, now) {
     const years = (now - born.getTime()) / unitMs("year");
     const yLabel = years >= 1 ? `（${Math.floor(years)}年）` : "";
     const next = nextBirthday(born, now);
-    if (next.diff === 0) return { text: `${yLabel}纪念日快乐 🎂`, cls: "is-birthday" };
-    return { text: `${yLabel}距纪念日 ${next.diff} 天`, cls: levelCls(next.diff) };
+    if (next.diff === 0) return { text: `${yLabel}🎉纪念日快乐`, cls: "is-birthday" };
+    return { text: `${yLabel}距纪念日 ${next.diff}天`, cls: levelCls(next.diff) };
   }
 
   if (task.type === "fixedday") {
@@ -486,8 +496,8 @@ function computeTimer(task, now) {
       const r = nextFixedDay(d, now);
       if (!best || r.diff < best.diff) best = { ...r, day: d };
     });
-    if (best.diff === 0) return { text: `今天就是 ${best.month} 月 ${best.date} 日`, cls: "is-today" };
-    return { text: `距（${best.month} 月 ${best.date} 日）还有 ${best.diff} 天`, cls: levelCls(best.diff) };
+    if (best.diff === 0) return { text: `今天就是（${best.month}月${best.date}日）`, cls: "is-today" };
+    return { text: `距（${best.month}月${best.date}日）还有 ${best.diff}天`, cls: levelCls(best.diff) };
   }
 
   // 倒数日（固定目标日期，可过去可未来）
@@ -496,9 +506,9 @@ function computeTimer(task, now) {
   const days = Math.floor(Math.abs(diff) / (24 * 3600 * 1000));
   if (diff >= 0) {
     if (days === 0) return { text: "今天到期", cls: "is-today" };
-    return { text: `距倒数日 ${days} 天`, cls: levelCls(days) };
+    return { text: `距倒数日 ${days}天`, cls: levelCls(days) };
   }
-  return { text: `已过期 ${days} 天`, cls: "is-over" };
+  return { text: `已过期 ${days}天`, cls: "is-over" };
 }
 
 // 计算距离下一次「每月 day 日」的天数
@@ -535,8 +545,9 @@ function isValidFixedday(token) {
 }
 
 // 解析固定日字符串：拆分、过滤非法、去重、排序（正数升序在前，负数升序在后）
+// 兼容旧版本逗号分隔与新版本斜杠分隔
 function parseFixeddays(str) {
-  const parts = String(str || "").split(",").map(s => s.trim()).filter(Boolean);
+  const parts = String(str || "").split(/[/,]/).map(s => s.trim()).filter(Boolean);
   const valid = parts.filter(isValidFixedday).map(s => parseInt(s, 10));
   const uniq = [...new Set(valid)];
   uniq.sort((a, b) => {
@@ -550,18 +561,23 @@ function parseFixeddays(str) {
 // 固定日输入框实时校验：仅允许 1-28、-1、-2、-3 相关字符，超限自动收敛
 function onFixeddayInput() {
   const raw = els.fixeddayInput.value;
-  const tokens = raw.split(",");
+  const tokens = raw.split("/");
+  const trailingSlash = tokens.length > 1 && tokens[tokens.length - 1] === ""; // 末尾斜杠：正在输入下一段
+  const leadingSlash = tokens.length > 1 && tokens[0] === "";                  // 开头斜杠：清理时再处理
   const out = tokens.map(t => {
     let s = t.trim().replace(/[^-0-9]/g, ""); // 仅保留数字与负号
     if (s.indexOf("-") > 0) s = s.replace(/-/g, ""); // 负号只允许开头
     if (s.startsWith("-")) s = "-" + s.slice(1).replace(/-/g, "");
-    if (s === "" || s === "-") return null; // 空 token 丢弃，避免尾随逗号
+    if (s === "") return null; // 空段丢弃（尾随/开头斜杠单独处理）
+    if (s === "-") return "-"; // 孤立负号：正在输入负数，保留
     let n = parseInt(s, 10);
     if (n > 28) n = 28;
     if (n < -3) n = -3;
     return String(n);
   }).filter(x => x !== null);
-  const newVal = out.join(",");
+  let newVal = out.join("/");
+  if (trailingSlash) newVal += "/";                                  // 输入中保留尾随斜杠
+  if (leadingSlash && out.length) newVal = "/" + newVal;
   if (newVal !== raw) els.fixeddayInput.value = newVal;
 }
 
