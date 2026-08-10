@@ -273,7 +273,7 @@ function openModal(id) {
     els.birthdayInput.value = todayStr();
     els.memorialInput.value = todayStr();
     els.fixeddayInput.value = "1";
-    els.cronInput.value = "0 9 * * 1-5";
+    els.cronInput.value = "0 8 * * *";
     els.typeLockTip.hidden = true;
   }
 
@@ -460,7 +460,7 @@ function submitTask(e) {
     base.fixeddayValue = arr.length ? arr.join(",") : "1";
   } else if (formType === "cron") {
     const val = els.cronInput.value.trim();
-    base.cronValue = val || "0 9 * * 1-5";
+    base.cronValue = val || "0 8 * * *";
   } else {
     base.memorialValue = els.memorialInput.value || todayStr();
   }
