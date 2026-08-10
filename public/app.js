@@ -1175,20 +1175,55 @@ function setQuote(text, from) {
 }
 
 function renderDailyQuote() {
-  // 先随机取一条内置作为即时兜底（避免空白）
-  const fb = QUOTE_FALLBACK[Math.floor(Math.random() * QUOTE_FALLBACK.length)];
-  setQuote(fb.text, fb.from);
+  const CACHE_KEY = "mytime_daily_quote";
+  const THROTTLE_MS = 60 * 1000; // 1 分钟内不重复请求 API，避免刷新限流
 
-  // hitokoto API 优先，成功则替换
+  // 读取本地缓存（含上次获取时间）
+  let cached = null;
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (raw) cached = JSON.parse(raw);
+  } catch (e) { cached = null; }
+
+  // 命中缓存且未超过 1 分钟 -> 直接展示缓存，不请求 API
+  if (cached && cached.text && Date.now() - (cached.ts || 0) < THROTTLE_MS) {
+    setQuote(cached.text, cached.from);
+    return;
+  }
+
+  // 真正优先 hitokoto：先清空（淡出），成功才显示 API 内容并写入缓存；
+  // 仅 fetch 失败 / 限流 / 超时(2.5s)才回退内置兜底（兜底不写缓存，便于 1 分钟后重试 API）。
+  const box = document.getElementById("dailyQuote");
+  if (box) { box.classList.remove("show"); box.classList.add("fade"); }
+  // 请求期间显示占位文本
+  setQuote("正在获取每日一言…", "");
+
+  const saveCache = (text, from) => {
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ text, from, ts: Date.now() })); } catch (e) {}
+  };
+
+  const useFallback = () => {
+    const fb = QUOTE_FALLBACK[Math.floor(Math.random() * QUOTE_FALLBACK.length)];
+    setQuote(fb.text, fb.from);
+  };
+
+  // 超时兜底：2.5 秒内未返回则显示内置
+  let done = false;
+  const timer = setTimeout(() => { if (!done) { done = true; useFallback(); } }, 2500);
+
   fetch("https://v1.hitokoto.cn/", { cache: "no-store" })
     .then(r => { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
     .then(d => {
       const text = (d.hitokoto || "").trim();
-      if (!text) return;
+      if (!text) throw new Error("empty");
       const from = [d.from, d.from_who].filter(Boolean).join("·");
-      setQuote(text, from);
+      if (!done) {
+        done = true; clearTimeout(timer);
+        saveCache(text, from);
+        setQuote(text, from);
+      }
     })
-    .catch(() => { /* 失败则保留内置兜底 */ });
+    .catch(() => { if (!done) { done = true; clearTimeout(timer); useFallback(); } });
 }
 
 /* ---------- 启动 ---------- */
