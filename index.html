@@ -85,6 +85,7 @@
             <button type="button" class="seg-item is-active" data-type="countdown">倒计时</button>
             <button type="button" class="seg-item" data-type="birthday">纪念日</button>
             <button type="button" class="seg-item" data-type="memorial">倒数日</button>
+            <button type="button" class="seg-item" data-type="fixedday">固定日</button>
           </div>
           <p id="typeLockTip" class="type-lock-tip" hidden>修改模式下任务类型已锁定，如需变更请删除后重新添加</p>
         </div>
@@ -115,6 +116,12 @@
         <div class="field type-panel" id="memorialField" hidden>
           <span class="field-label">目标日期</span>
           <input type="date" id="memorialInput" class="input" />
+        </div>
+
+        <!-- 固定日类型输入区 -->
+        <div class="field type-panel" id="fixeddayField" hidden>
+          <span class="field-label">每月几号</span>
+          <input type="number" id="fixeddayInput" class="input cd-value" min="1" max="31" step="1" value="1" placeholder="1-31" />
         </div>
 
         <div class="modal-foot">
