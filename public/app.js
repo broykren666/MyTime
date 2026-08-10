@@ -936,6 +936,93 @@ function startOfDay(date) {
   return d.getTime();
 }
 
+/* ---------- 今日公历/农历/节气/节日 ---------- */
+const WEEK_CN = ["星期日","星期一","星期二","星期三","星期四","星期五","星期六"];
+
+function renderDayInfo() {
+  if (typeof Solar === "undefined" || typeof Lunar === "undefined") return;
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth() + 1; // Solar.fromYmd 月份为 1-based
+  const d = now.getDate();
+
+  const solar = Solar.fromYmd(y, m, d);
+  const lunar = solar.getLunar();
+
+  // 公历 + 星期
+  const week = WEEK_CN[now.getDay()];
+  const diSolar = document.getElementById("diSolar");
+  const diLunar = document.getElementById("diLunar");
+  if (diSolar) diSolar.innerHTML = `${y}年${m}月${d}日<span class="di-week">${week}</span>`;
+
+  // 农历（getMonthInChinese 已自动处理闰月前缀"闰"）
+  const lunarText = "农历 " + lunar.getMonthInChinese() + "月" + lunar.getDayInChinese();
+  const animals = lunar.getYearShengXiao();
+  const ganzhi = lunar.getYearInGanZhi();
+  if (diLunar) diLunar.textContent = `${lunarText} · ${ganzhi}年（${animals}）`;
+
+  // 节日 + 节气
+  const tags = [];
+  // 传统节日（如 春节、中秋、端午、除夕）
+  solar.getFestivals().forEach(f => tags.push({ type: "festival", text: f }));
+  // 现代/其他节日（如 元旦、劳动节、情人节、国庆节、母亲节等）
+  solar.getOtherFestivals().forEach(f => tags.push({ type: "festival", text: f }));
+  lunar.getFestivals().forEach(f => tags.push({ type: "festival", text: f }));
+  // 24 节气（当天无节气时返回空串）
+  const jq = lunar.getJieQi();
+  if (jq) tags.push({ type: "jieqi", text: jq });
+
+  const diTags = document.getElementById("diTags");
+  if (!diTags) return;
+
+  // 当天有节日/节气 -> 直接展示
+  if (tags.length > 0) {
+    diTags.innerHTML = tags.map(t =>
+      `<span class="di-tag t-${t.type}">${t.type === "jieqi" ? "🌿 " : "🎉 "}${t.text}</span>`
+    ).join("");
+    return;
+  }
+
+  // 当天无节日/节气 -> 查找下一个（节气用库 API，节日枚举未来 366 天）
+  const next = findNextEvent(now);
+  if (next) {
+    const days = Math.round((next.date - startOfDay(now)) / 86400000);
+    const label = days <= 0 ? "今天" : days + "天后";
+    diTags.innerHTML = `<span class="di-tag t-${next.type}">${next.type === "jieqi" ? "🌿 " : "🎉 "}${next.text}（${label}）</span>`;
+    return;
+  }
+  diTags.innerHTML = '<span class="di-tag t-none">未来一年无节日 / 节气</span>';
+}
+
+/* 查找从 today 起最近的一个节日或节气（含节日与 24 节气），返回 {type,text,date} */
+function findNextEvent(today) {
+  const candidates = [];
+  // 1) 节气：使用 lunar.js 的 getNextJieQi（返回下一个节气）
+  try {
+    const jq = Lunar.fromSolar(Solar.fromDate(today)).getNextJieQi(true);
+    if (jq && jq.getSolar()) {
+      const js = jq.getSolar();
+      candidates.push({ type: "jieqi", text: jq.getName(), date: new Date(js.getYear(), js.getMonth() - 1, js.getDay()) });
+    }
+  } catch (e) { /* 忽略 */ }
+
+  // 2) 节日：枚举未来 366 天，收集公历/农历节日
+  for (let off = 1; off <= 366; off++) {
+    const dt = new Date(today.getFullYear(), today.getMonth(), today.getDate() + off);
+    const s = Solar.fromYmd(dt.getFullYear(), dt.getMonth() + 1, dt.getDate());
+    const l = s.getLunar();
+    const names = [];
+    s.getFestivals().forEach(f => names.push(f));
+    s.getOtherFestivals().forEach(f => names.push(f));
+    l.getFestivals().forEach(f => names.push(f));
+    names.forEach(f => candidates.push({ type: "festival", text: f, date: dt }));
+  }
+
+  if (candidates.length === 0) return null;
+  candidates.sort((a, b) => a.date - b.date);
+  return candidates[0];
+}
+
 /* ---------- 事件绑定 ---------- */
 els.addBtn.addEventListener("click", () => {
   requestNotifyPermission();
@@ -1056,4 +1143,15 @@ els.themeBtn.addEventListener("click", toggleTheme);
 
 /* ---------- 启动 ---------- */
 renderList();
+renderDayInfo();
 setInterval(updateTimers, 1000);
+
+// 跨天自动刷新顶部日期/农历信息：每分钟检查一次日期是否变化
+let _dayInfoKey = new Date().toDateString();
+setInterval(() => {
+  const k = new Date().toDateString();
+  if (k !== _dayInfoKey) {
+    _dayInfoKey = k;
+    renderDayInfo();
+  }
+}, 60 * 1000);
