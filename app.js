@@ -210,8 +210,7 @@ function formatTime(task) {
   if (task.type === "countdown") return `${task.cdValue} ${UNIT_LABEL[task.cdUnit] || ""}`;
   if (task.type === "birthday") return task.birthdayValue || "—";
   if (task.type === "fixedday") {
-    const d = parseInt(task.fixeddayValue, 10) || 1;
-    return d < 0 ? `每月月末倒数第 ${-d} 天` : `每月 ${d} 日`;
+    return `每月 ${task.fixeddayValue || "1"} 日`;
   }
   return task.memorialValue || "—";
 }
@@ -256,7 +255,7 @@ function openModal(id) {
     els.cdValue.value = 1;
     els.birthdayInput.value = todayStr();
     els.memorialInput.value = todayStr();
-    els.fixeddayInput.value = new Date().getDate();
+    els.fixeddayInput.value = "1";
     els.typeLockTip.hidden = true;
   }
 
@@ -408,10 +407,8 @@ function submitTask(e) {
   } else if (formType === "birthday") {
     base.birthdayValue = els.birthdayInput.value || todayStr();
   } else if (formType === "fixedday") {
-    let fv = parseInt(els.fixeddayInput.value, 10);
-    if (!fv || fv === 0) fv = 1;
-    fv = Math.max(-31, Math.min(31, fv));
-    base.fixeddayValue = fv;
+    const arr = parseFixeddays(els.fixeddayInput.value);
+    base.fixeddayValue = arr.length ? arr.join(",") : "1";
   } else {
     base.memorialValue = els.memorialInput.value || todayStr();
   }
@@ -482,10 +479,15 @@ function computeTimer(task, now) {
   }
 
   if (task.type === "fixedday") {
-    const day = parseInt(task.fixeddayValue, 10) || 1;
-    const next = nextFixedDay(day, now);
-    if (next.diff === 0) return { text: `今天就是 ${next.month} 月 ${next.date} 日`, cls: "is-today" };
-    return { text: `距（${next.month} 月 ${next.date} 日）还有 ${next.diff} 天`, cls: levelCls(next.diff) };
+    const days = parseFixeddays(task.fixeddayValue);
+    if (days.length === 0) return { text: "未设置有效日期", cls: "" };
+    let best = null;
+    days.forEach(d => {
+      const r = nextFixedDay(d, now);
+      if (!best || r.diff < best.diff) best = { ...r, day: d };
+    });
+    if (best.diff === 0) return { text: `今天就是 ${best.month} 月 ${best.date} 日`, cls: "is-today" };
+    return { text: `距（${best.month} 月 ${best.date} 日）还有 ${best.diff} 天`, cls: levelCls(best.diff) };
   }
 
   // 倒数日（固定目标日期，可过去可未来）
@@ -521,6 +523,46 @@ function nextFixedDay(day, nowTs) {
     diff = Math.round((cand.getTime() - startOfDay(nowTs)) / dayMs);
   }
   return { diff, month: cand.getMonth() + 1, date: cand.getDate() };
+}
+
+// 固定日单值合法性：正数 1-28，负数仅 -1/-2/-3
+function isValidFixedday(token) {
+  if (!/^-?\d+$/.test(token)) return false;
+  const n = parseInt(token, 10);
+  if (n > 0) return n >= 1 && n <= 28;
+  if (n < 0) return n === -1 || n === -2 || n === -3;
+  return false; // 0 非法
+}
+
+// 解析固定日字符串：拆分、过滤非法、去重、排序（正数升序在前，负数升序在后）
+function parseFixeddays(str) {
+  const parts = String(str || "").split(",").map(s => s.trim()).filter(Boolean);
+  const valid = parts.filter(isValidFixedday).map(s => parseInt(s, 10));
+  const uniq = [...new Set(valid)];
+  uniq.sort((a, b) => {
+    const ap = a > 0, bp = b > 0;
+    if (ap !== bp) return ap ? -1 : 1; // 正数在前
+    return a - b;
+  });
+  return uniq;
+}
+
+// 固定日输入框实时校验：仅允许 1-28、-1、-2、-3 相关字符，超限自动收敛
+function onFixeddayInput() {
+  const raw = els.fixeddayInput.value;
+  const tokens = raw.split(",");
+  const out = tokens.map(t => {
+    let s = t.trim().replace(/[^-0-9]/g, ""); // 仅保留数字与负号
+    if (s.indexOf("-") > 0) s = s.replace(/-/g, ""); // 负号只允许开头
+    if (s.startsWith("-")) s = "-" + s.slice(1).replace(/-/g, "");
+    if (s === "" || s === "-") return null; // 空 token 丢弃，避免尾随逗号
+    let n = parseInt(s, 10);
+    if (n > 28) n = 28;
+    if (n < -3) n = -3;
+    return String(n);
+  }).filter(x => x !== null);
+  const newVal = out.join(",");
+  if (newVal !== raw) els.fixeddayInput.value = newVal;
 }
 
 // 按剩余天数返回颜色分级：>30 绿 / 10-30 橙 / <10 红；type 决定文案前缀由调用方处理
@@ -586,6 +628,7 @@ els.exportBtn.addEventListener("click", exportData);
 els.importPickBtn.addEventListener("click", () => els.importInput.click());
 els.importInput.addEventListener("change", e => onImportFilePicked(e.target.files[0]));
 els.importBtn.addEventListener("click", doImport);
+els.fixeddayInput.addEventListener("input", onFixeddayInput);
 
 /* ---------- 浏览器通知 ---------- */
 function requestNotifyPermission() {
