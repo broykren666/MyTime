@@ -346,20 +346,29 @@ function computeTimer(task, now) {
 
   if (task.type === "birthday") {
     const born = new Date((task.birthdayValue || todayStr()) + "T00:00:00");
+    const years = (now - born.getTime()) / unitMs("year");
+    const yLabel = years >= 1 ? `（${Math.floor(years)}年）` : "";
     const next = nextBirthday(born, now);
-    if (next.diff === 0) return { text: "纪念日快乐 🎂", cls: "is-birthday" };
-    return { text: `距下次纪念日 ${next.diff} 天`, cls: "" };
+    if (next.diff === 0) return { text: `${yLabel}纪念日快乐 🎂`, cls: "is-birthday" };
+    return { text: `${yLabel}距纪念日 ${next.diff} 天`, cls: levelCls(next.diff) };
   }
 
-  // 纪念（固定目标日期，可过去可未来）
+  // 倒数日（固定目标日期，可过去可未来）
   const target = new Date((task.memorialValue || todayStr()) + "T00:00:00").getTime();
   const diff = target - now;
   const days = Math.floor(Math.abs(diff) / (24 * 3600 * 1000));
   if (diff >= 0) {
-    if (days === 0) return { text: "就是今天", cls: "" };
-    return { text: `距今 ${days} 天`, cls: "" };
+    if (days === 0) return { text: "今天到期", cls: "is-today" };
+    return { text: `距倒数日 ${days} 天`, cls: levelCls(days) };
   }
-  return { text: `已逾期 ${days} 天`, cls: "is-over" };
+  return { text: `已过期 ${days} 天`, cls: "is-over" };
+}
+
+// 按剩余天数返回颜色分级：>30 绿 / 10-30 橙 / <10 红；type 决定文案前缀由调用方处理
+function levelCls(days) {
+  if (days > 30) return "is-safe";
+  if (days >= 10) return "is-warn";
+  return "is-urgent";
 }
 
 // 计算距离下一次生日的天数（今年若已过则取明年）
