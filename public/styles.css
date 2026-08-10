@@ -247,6 +247,30 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 .seg-unit { flex: 1; }
 .type-lock-tip { font-size: 12px; color: var(--warning); margin-top: 2px; }
 
+/* ===== Cron 信息栏 ===== */
+.cron-info {
+  font-size: 12.5px; padding: 10px 12px; border-radius: 8px;
+  line-height: 1.6; animation: slideIn .22s ease;
+}
+.cron-info.cron-ok {
+  background: rgba(16, 185, 129, 0.1); color: #065F46;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+.cron-info.cron-err {
+  background: rgba(239, 68, 68, 0.1); color: #991B1B;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+[data-theme="dark"] .cron-info.cron-ok {
+  background: rgba(52, 211, 153, 0.12); color: #6EE7B7;
+  border-color: rgba(52, 211, 153, 0.25);
+}
+[data-theme="dark"] .cron-info.cron-err {
+  background: rgba(248, 113, 113, 0.12); color: #FCA5A5;
+  border-color: rgba(248, 113, 113, 0.25);
+}
+.cron-info .cron-desc { font-weight: 500; }
+.cron-info .cron-next { font-family: var(--mono); font-size: 12px; margin-top: 2px; }
+
 /* ===== 弹窗底部 ===== */
 .modal-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
 

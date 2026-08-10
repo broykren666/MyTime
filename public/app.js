@@ -47,6 +47,7 @@ let tasks = loadTasks();
 if (tasks.some(t => t.type === "fixedday")) saveTasks();
 let editingId = null; // null = 添加模式
 const notifiedIds = new Set(); // 已发送过结束通知的倒计时任务 id，避免每秒重复提醒
+const cronCache = new Map(); // 缓存 Croner 实例，key 为 cron 表达式
 
 /* ---------- DOM 引用 ---------- */
 const els = {
@@ -79,6 +80,9 @@ const els = {
   memorialInput: document.getElementById("memorialInput"),
   fixeddayField: document.getElementById("fixeddayField"),
   fixeddayInput: document.getElementById("fixeddayInput"),
+  cronField: document.getElementById("cronField"),
+  cronInput: document.getElementById("cronInput"),
+  cronInfo: document.getElementById("cronInfo"),
 };
 
 /* 当前表单选择的类型 / 单位（临时状态） */
@@ -219,6 +223,7 @@ function opBtn(label, title, disabled, onClick, danger) {
 function formatTime(task) {
   if (task.type === "countdown") return `${task.cdValue} ${UNIT_LABEL[task.cdUnit] || ""}`;
   if (task.type === "birthday") return task.birthdayValue || "—";
+  if (task.type === "cron") return task.cronValue || "—";
   if (task.type === "fixedday") {
     return `每月 ${task.fixeddayValue || "1"} 日`;
   }
@@ -254,6 +259,8 @@ function openModal(id) {
       els.birthdayInput.value = task.birthdayValue;
     } else if (task.type === "fixedday") {
       els.fixeddayInput.value = task.fixeddayValue;
+    } else if (task.type === "cron") {
+      els.cronInput.value = task.cronValue;
     } else {
       els.memorialInput.value = task.memorialValue;
     }
@@ -266,6 +273,7 @@ function openModal(id) {
     els.birthdayInput.value = todayStr();
     els.memorialInput.value = todayStr();
     els.fixeddayInput.value = "1";
+    els.cronInput.value = "0 9 * * 1-5";
     els.typeLockTip.hidden = true;
   }
 
@@ -273,11 +281,40 @@ function openModal(id) {
   // 先显示弹窗再同步类型 UI，避免隐藏父级下 class 切换渲染失效
   syncTypeUI();
   syncUnitUI();
+  refreshCronInfo();
 }
 
 function closeModal() {
   els.modal.hidden = true;
   editingId = null;
+}
+
+/* ---------- Cron 实时解析 ---------- */
+function pad2(n) { return String(n).padStart(2, "0"); }
+
+function formatDateTime(d) {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+}
+
+function refreshCronInfo() {
+  const info = els.cronInfo;
+  const expr = els.cronInput.value.trim();
+  if (!expr) { info.hidden = true; return; }
+  try {
+    const c = new Cron(expr);
+    const next = c.nextRun();
+    if (!next) { info.hidden = true; return; }
+    const desc = c.getPattern ? c.getPattern() : expr;
+    info.innerHTML = `<div class="cron-desc">${desc}</div><div class="cron-next">下次触发：${formatDateTime(next)}</div>`;
+    info.className = "cron-info cron-ok";
+    info.hidden = false;
+    // 刷新缓存供 computeTimer 复用
+    cronCache.set(expr, c);
+  } catch (e) {
+    info.innerHTML = `<div class="cron-desc">${e.message || "表达式无效"}</div>`;
+    info.className = "cron-info cron-err";
+    info.hidden = false;
+  }
 }
 
 /* ---------- 数据管理弹窗 ---------- */
@@ -375,7 +412,7 @@ function syncTypeUI() {
     b.disabled = locked;
   });
   // 根据任务类型动态显示对应输入区，隐藏其它（hidden 属性 + 淡入过渡）
-  const fieldKey = { countdown: "cd", birthday: "birthday", memorial: "memorial", fixedday: "fixedday" };
+  const fieldKey = { countdown: "cd", birthday: "birthday", memorial: "memorial", fixedday: "fixedday", cron: "cron" };
   const show = type => {
     const el = els[fieldKey[type] + "Field"];
     el.hidden = formType !== type;
@@ -385,12 +422,14 @@ function syncTypeUI() {
   show("birthday");
   show("memorial");
   show("fixedday");
+  show("cron");
   // 禁用隐藏区字段，避免浏览器校验到隐藏的必填框
   els.cdValue.disabled = formType !== "countdown";
   els.unitSeg.querySelectorAll(".seg-item").forEach(b => (b.disabled = formType !== "countdown"));
   els.birthdayInput.disabled = formType !== "birthday";
   els.memorialInput.disabled = formType !== "memorial";
   els.fixeddayInput.disabled = formType !== "fixedday";
+  els.cronInput.disabled = formType !== "cron";
 }
 
 function syncUnitUI() {
@@ -419,6 +458,9 @@ function submitTask(e) {
   } else if (formType === "fixedday") {
     const arr = parseFixeddays(els.fixeddayInput.value);
     base.fixeddayValue = arr.length ? arr.join(",") : "1";
+  } else if (formType === "cron") {
+    const val = els.cronInput.value.trim();
+    base.cronValue = val || "0 9 * * 1-5";
   } else {
     base.memorialValue = els.memorialInput.value || todayStr();
   }
@@ -500,7 +542,37 @@ function computeTimer(task, now) {
     return { text: `距（${best.month}月${best.date}日）还有 ${best.diff}天`, cls: levelCls(best.diff) };
   }
 
+  if (task.type === "cron") {
+    const expr = task.cronValue || "";
+    if (!expr.trim()) return { text: "未设置表达式", cls: "" };
+    let cronInst = cronCache.get(expr);
+    if (!cronInst) {
+      try {
+        cronInst = new Cron(expr);
+        cronCache.set(expr, cronInst);
+      } catch (e) {
+        return { text: "表达式无效", cls: "is-over" };
+      }
+    }
+    const next = cronInst.nextRun();
+    if (!next) return { text: "无匹配时间", cls: "is-over" };
+    const remain = next.getTime() - now;
+    if (remain <= 0) return { text: "已触发", cls: "is-today" };
+    const parts = [];
+    let r = remain;
+    const d = Math.floor(r / unitMs("day")); r -= d * unitMs("day");
+    const h = Math.floor(r / unitMs("hour")); r -= h * unitMs("hour");
+    const m = Math.floor(r / unitMs("minute")); r -= m * unitMs("minute");
+    const s = Math.floor(r / 1000);
+    if (d > 0) parts.push(`${d}天`);
+    if (h > 0 || d > 0) parts.push(`${h}时`);
+    if (m > 0 || h > 0 || d > 0) parts.push(`${m}分`);
+    parts.push(`${s}秒`);
+    return { text: "剩余 " + parts.join(" "), cls: levelCls(d) };
+  }
+
   // 倒数日（固定目标日期，可过去可未来）
+  if (task.type === "memorial") {
   const target = new Date((task.memorialValue || todayStr()) + "T00:00:00").getTime();
   const diff = target - now;
   const days = Math.floor(Math.abs(diff) / (24 * 3600 * 1000));
@@ -626,6 +698,8 @@ els.unitSeg.querySelectorAll(".seg-item").forEach(b =>
     syncUnitUI();
   })
 );
+
+els.cronInput.addEventListener("input", refreshCronInfo);
 
 els.modal.querySelectorAll("[data-close]").forEach(el =>
   el.addEventListener("click", closeModal)
