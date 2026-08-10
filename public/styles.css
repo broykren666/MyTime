@@ -273,6 +273,65 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 .cron-info .cron-desc { font-weight: 500; }
 .cron-info .cron-next { font-family: var(--mono); font-size: 12px; margin-top: 2px; }
 
+/* ===== 公历/农历切换按钮 ===== */
+.calendar-toggle {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.cal-btn {
+  padding: 4.5px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-soft);
+  font-size: 0.84rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.cal-btn.is-active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.cal-btn:hover:not(.is-active) {
+  background: #F1F5F9;
+}
+[data-theme="dark"] .cal-btn:hover:not(.is-active) {
+  background: #334155;
+}
+
+/* ===== 农历选择器 ===== */
+.lunar-picker {
+  margin-top: -2px;
+}
+.lunar-picker[hidden] { display: none; }
+.lunar-row {
+  display: flex;
+  gap: 8px;
+}
+.lunar-select {
+  flex: 1;
+  cursor: pointer;
+}
+.leap-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 0.84rem;
+  color: var(--text-soft);
+  cursor: pointer;
+  user-select: none;
+}
+.leap-check input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
 /* ===== 弹窗底部 ===== */
 .modal-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
 

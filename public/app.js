@@ -6,6 +6,16 @@ const UNIT_LABEL = { year: "年", month: "月", week: "周", day: "天", hour: "
 // 兼容旧数据：曾经用 "date" 表示固定日期，统一映射为 memorial（纪念）
 const TYPE_ALIAS = { date: "memorial" };
 
+/* 农历显示名称 */
+const LUNAR_MONTH_NAMES = ['', '正月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','腊月'];
+const LUNAR_DAY_NAMES = ['','初一','初二','初三','初四','初五','初六','初七','初八','初九','初十',
+  '十一','十二','十三','十四','十五','十六','十七','十八','十九','二十',
+  '廿一','廿二','廿三','廿四','廿五','廿六','廿七','廿八','廿九','三十'];
+
+/* 公历/农历切换状态（弹窗内，按类型的临时状态） */
+let formCalendarTypeBirthday = "solar";
+let formCalendarTypeMemorial = "solar";
+
 function normalizeType(t) {
   return TYPE_ALIAS[t] || t;
 }
@@ -81,8 +91,18 @@ const els = {
   unitSeg: document.getElementById("unitSeg"),
   birthdayField: document.getElementById("birthdayField"),
   birthdayInput: document.getElementById("birthdayInput"),
+  birthdayCalendarToggle: document.getElementById("birthdayCalendarToggle"),
+  birthdayLunarPicker: document.getElementById("birthdayLunarPicker"),
+  birthdayLunarMonth: document.getElementById("birthdayLunarMonth"),
+  birthdayLunarDay: document.getElementById("birthdayLunarDay"),
+  birthdayLunarLeap: document.getElementById("birthdayLunarLeap"),
   memorialField: document.getElementById("memorialField"),
   memorialInput: document.getElementById("memorialInput"),
+  memorialCalendarToggle: document.getElementById("memorialCalendarToggle"),
+  memorialLunarPicker: document.getElementById("memorialLunarPicker"),
+  memorialLunarMonth: document.getElementById("memorialLunarMonth"),
+  memorialLunarDay: document.getElementById("memorialLunarDay"),
+  memorialLunarLeap: document.getElementById("memorialLunarLeap"),
   fixeddayField: document.getElementById("fixeddayField"),
   fixeddayInput: document.getElementById("fixeddayInput"),
   cronField: document.getElementById("cronField"),
@@ -229,12 +249,38 @@ function opBtn(label, title, disabled, onClick, danger) {
 
 function formatTime(task) {
   if (task.type === "countdown") return `${task.cdValue} ${UNIT_LABEL[task.cdUnit] || ""}`;
-  if (task.type === "birthday") return task.birthdayValue || "—";
+  if (task.type === "birthday") return formatBirthdayTime(task);
   if (task.type === "cron") return task.cronValue || "—";
   if (task.type === "fixedday") {
     return `每月 ${task.fixeddayValue || "1"} 日`;
   }
+  return formatMemorialTime(task);
+}
+
+/* 格式化纪念日/倒数日的日期展示 */
+function formatBirthdayTime(task) {
+  if (task.calendarType === "lunar") {
+    const monthName = LUNAR_MONTH_NAMES[task.lunarMonth] || "";
+    const dayName = LUNAR_DAY_NAMES[task.lunarDay] || "";
+    const leap = task.lunarLeap ? "闰" : "";
+    const refYear = getReferenceYear(task);
+    return refYear ? `农历${leap}${monthName}${dayName}（${refYear}年）` : `农历${leap}${monthName}${dayName}`;
+  }
+  return task.birthdayValue || "—";
+}
+
+function formatMemorialTime(task) {
+  if (task.calendarType === "lunar") {
+    const monthName = LUNAR_MONTH_NAMES[task.lunarMonth] || "";
+    const dayName = LUNAR_DAY_NAMES[task.lunarDay] || "";
+    const leap = task.lunarLeap ? "闰" : "";
+    return `农历${leap}${monthName}${dayName}`;
+  }
   return task.memorialValue || "—";
+}
+
+function ymdStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 /* ---------- 顺序调整 / 删除 ---------- */
@@ -253,6 +299,18 @@ function openModal(id) {
   editingId = id || null;
   els.form.reset();
 
+  // 初始化农历下拉框（仅首次）
+  initLunarSelects();
+  // 重置农历选择状态
+  els.birthdayLunarMonth.value = "1";
+  els.birthdayLunarDay.value = "1";
+  els.birthdayLunarLeap.checked = false;
+  els.memorialLunarMonth.value = "1";
+  els.memorialLunarDay.value = "1";
+  els.memorialLunarLeap.checked = false;
+  formCalendarTypeBirthday = "solar";
+  formCalendarTypeMemorial = "solar";
+
   if (editingId) {
     const task = tasks.find(t => t.id === editingId);
     if (!task) return;
@@ -263,14 +321,26 @@ function openModal(id) {
       formUnit = task.cdUnit;
       els.cdValue.value = task.cdValue;
     } else if (task.type === "birthday") {
-      els.birthdayInput.value = task.birthdayValue;
+      if (task.calendarType === "lunar") {
+        formCalendarTypeBirthday = "lunar";
+        els.birthdayLunarMonth.value = task.lunarMonth || 1;
+        els.birthdayLunarDay.value = task.lunarDay || 1;
+        els.birthdayLunarLeap.checked = task.lunarLeap || false;
+      }
+      els.birthdayInput.value = task.birthdayValue || todayStr();
     } else if (task.type === "fixedday") {
       els.fixeddayInput.value = task.fixeddayValue;
-      onFixeddayInput(); // 编辑时手动触发校验，确保输入框合法性提示更新
+      onFixeddayInput();
     } else if (task.type === "cron") {
       els.cronInput.value = task.cronValue;
     } else {
-      els.memorialInput.value = task.memorialValue;
+      if (task.calendarType === "lunar") {
+        formCalendarTypeMemorial = "lunar";
+        els.memorialLunarMonth.value = task.lunarMonth || 1;
+        els.memorialLunarDay.value = task.lunarDay || 1;
+        els.memorialLunarLeap.checked = task.lunarLeap || false;
+      }
+      els.memorialInput.value = task.memorialValue || todayStr();
     }
     els.typeLockTip.hidden = false;
   } else {
@@ -286,7 +356,6 @@ function openModal(id) {
   }
 
   els.modal.hidden = false;
-  // 先显示弹窗再同步类型 UI，避免隐藏父级下 class 切换渲染失效
   syncTypeUI();
   syncUnitUI();
   refreshCronInfo();
@@ -295,6 +364,102 @@ function openModal(id) {
 function closeModal() {
   els.modal.hidden = true;
   editingId = null;
+}
+
+/* ---------- 农历选择器初始化 ---------- */
+function initLunarSelects() {
+  // 月份选项：1-12
+  for (const sel of [els.birthdayLunarMonth, els.memorialLunarMonth]) {
+    if (sel.options.length === 0) {
+      for (let i = 1; i <= 12; i++) {
+        sel.add(new Option(LUNAR_MONTH_NAMES[i], i));
+      }
+    }
+  }
+  // 日期选项：1-30
+  for (const sel of [els.birthdayLunarDay, els.memorialLunarDay]) {
+    if (sel.options.length === 0) {
+      for (let i = 1; i <= 30; i++) {
+        sel.add(new Option(LUNAR_DAY_NAMES[i], i));
+      }
+    }
+  }
+}
+
+/* 切换公历/农历输入面板 */
+function syncCalendarTypeUI(prefix) {
+  const isLunar = prefix === "birthday" ? formCalendarTypeBirthday === "lunar" : formCalendarTypeMemorial === "lunar";
+  const toggle   = els[prefix + "CalendarToggle"];
+  const dateInput = els[prefix + "Input"];
+  const lunarPicker = els[prefix + "LunarPicker"];
+
+  // 更新按钮状态
+  toggle.querySelectorAll(".cal-btn").forEach(btn => {
+    btn.classList.toggle("is-active", btn.dataset.cal === (isLunar ? "lunar" : "solar"));
+  });
+  // 切换输入面板
+  dateInput.hidden = isLunar;
+  lunarPicker.hidden = !isLunar;
+}
+
+/* 农历年月日 → 公历 Date 对象（当天 00:00:00）。失败返回 null。
+ * 注：此版 lunar-javascript 的 fromYmd 不支持显式闰月参数，
+ * 闰月情况通过 LunarYear.getLeapMonth() 辅助处理，如当年无对应闰月则使用普通月 */
+function solarFromLunar(lunarYear, lunarMonth, lunarDay, lunarLeap) {
+  try {
+    // v1.7.7 的 Lunar.fromYmd 不直接支持闰月参数，通过 LunarYear 来定位闰月
+    const lunar = Lunar.fromYmd(lunarYear, lunarMonth, lunarDay);
+
+    if (lunarLeap) {
+      // 如果该年有对应闰月，尝试从 months 中找到闰月并计算
+      try {
+        const ly = LunarYear.fromYear(lunarYear);
+        const actualLeap = ly.getLeapMonth();
+        if (actualLeap === lunarMonth) {
+          const months = ly.getMonths();
+          for (let i = 0; i < months.length; i++) {
+            const m = months[i];
+            if (m.getYear() === lunarYear && m.getMonth() === lunarMonth && m.isLeap()) {
+              const jd = m.getFirstJulianDay() + (lunarDay - 1);
+              const sd = Solar.fromJulianDay(jd);
+              return new Date(sd.getYear(), sd.getMonth() - 1, sd.getDay(), 0, 0, 0);
+            }
+          }
+        }
+      } catch (_) { /* 回退到普通月 */ }
+    }
+
+    const solar = lunar.getSolar();
+    return new Date(solar.getYear(), solar.getMonth() - 1, solar.getDay(), 0, 0, 0);
+  } catch (_) {
+    return null;
+  }
+}
+
+/* 获取下一次农历日期对应的公历时间戳（毫秒） */
+function nextLunarOccurrence(lunarMonth, lunarDay, lunarLeap, nowTs) {
+  const now = new Date(nowTs);
+  const thisYear = now.getFullYear();
+  // 当年
+  let solar = solarFromLunar(thisYear, lunarMonth, lunarDay, lunarLeap);
+  if (solar && solar.getTime() > startOfDay(nowTs)) {
+    return solar.getTime();
+  }
+  // 明年
+  solar = solarFromLunar(thisYear + 1, lunarMonth, lunarDay, lunarLeap);
+  if (solar) return solar.getTime();
+  // 极端情况回退：再往后一年
+  solar = solarFromLunar(thisYear + 2, lunarMonth, lunarDay, lunarLeap);
+  return solar ? solar.getTime() : null;
+}
+
+/* 获取纪念日基准年份（用于“X年”显示） */
+function getReferenceYear(task) {
+  if (task.birthdayValue) {
+    const d = new Date(task.birthdayValue);
+    if (!isNaN(d.getTime())) return d.getFullYear();
+  }
+  return null;
 }
 
 /* ---------- Cron 实时解析 ---------- */
@@ -443,6 +608,9 @@ function syncTypeUI() {
   els.memorialInput.disabled = formType !== "memorial";
   els.fixeddayInput.disabled = formType !== "fixedday";
   els.cronInput.disabled = formType !== "cron";
+  // 同步农历面板
+  syncCalendarTypeUI("birthday");
+  syncCalendarTypeUI("memorial");
 }
 
 function syncUnitUI() {
@@ -467,7 +635,18 @@ function submitTask(e) {
     base.cdUnit = formUnit;
     base.createdAt = Date.now();
   } else if (formType === "birthday") {
-    base.birthdayValue = els.birthdayInput.value || todayStr();
+    base.calendarType = formCalendarTypeBirthday;
+    if (formCalendarTypeBirthday === "lunar") {
+      base.lunarMonth = parseInt(els.birthdayLunarMonth.value, 10) || 1;
+      base.lunarDay = parseInt(els.birthdayLunarDay.value, 10) || 1;
+      base.lunarLeap = els.birthdayLunarLeap.checked;
+      // 基准日：当年农历 → 公历转换，用于年份计数
+      const nowYear = new Date().getFullYear();
+      const sd = solarFromLunar(nowYear, base.lunarMonth, base.lunarDay, base.lunarLeap);
+      base.birthdayValue = sd ? ymdStr(sd) : todayStr();
+    } else {
+      base.birthdayValue = els.birthdayInput.value || todayStr();
+    }
   } else if (formType === "fixedday") {
     const arr = parseFixeddays(els.fixeddayInput.value);
     if (arr.length === 0) { alert("固定日输入无效，请输入 1-28、-1、-2、-3，多个用/分隔"); return; }
@@ -480,7 +659,17 @@ function submitTask(e) {
     }
     base.cronValue = val;
   } else {
-    base.memorialValue = els.memorialInput.value || todayStr();
+    base.calendarType = formCalendarTypeMemorial;
+    if (formCalendarTypeMemorial === "lunar") {
+      base.lunarMonth = parseInt(els.memorialLunarMonth.value, 10) || 1;
+      base.lunarDay = parseInt(els.memorialLunarDay.value, 10) || 1;
+      base.lunarLeap = els.memorialLunarLeap.checked;
+      const nowYear = new Date().getFullYear();
+      const sd = solarFromLunar(nowYear, base.lunarMonth, base.lunarDay, base.lunarLeap);
+      base.memorialValue = sd ? ymdStr(sd) : todayStr();
+    } else {
+      base.memorialValue = els.memorialInput.value || todayStr();
+    }
   }
 
   if (editingId) {
@@ -549,6 +738,18 @@ function computeTimer(task, now) {
   }
 
   if (task.type === "birthday") {
+    // 农历纪念日
+    if (task.calendarType === "lunar") {
+      const nowDate = new Date(now);
+      const nextTs = nextLunarOccurrence(task.lunarMonth, task.lunarDay, task.lunarLeap, now);
+      if (!nextTs) return { text: "日期不合法", cls: "is-over" };
+      const diffDays = Math.round((nextTs - startOfDay(now)) / (24 * 3600 * 1000));
+      const refYear = getReferenceYear(task);
+      const yLabel = refYear ? `（${nowDate.getFullYear() - refYear}年）` : "";
+      if (diffDays === 0) return { text: `${yLabel}🎉纪念日快乐`, cls: "is-birthday" };
+      return { text: `${yLabel}距纪念日 ${diffDays}天`, cls: levelCls(diffDays) };
+    }
+    // 公历纪念日
     const born = new Date((task.birthdayValue || todayStr()) + "T00:00:00");
     const years = (now - born.getTime()) / unitMs("year");
     const yLabel = years >= 1 ? `（${Math.floor(years)}年）` : "";
@@ -601,7 +802,18 @@ function computeTimer(task, now) {
 
   // 倒数日（固定目标日期，可过去可未来）
   if (task.type === "memorial") {
-    const target = new Date((task.memorialValue || todayStr()) + "T00:00:00").getTime();
+    let target = new Date((task.memorialValue || todayStr()) + "T00:00:00").getTime();
+    // 农历倒数日：按当前/下一年转换
+    if (task.calendarType === "lunar") {
+      const nowDate = new Date(now);
+      const thisYearSolar = solarFromLunar(nowDate.getFullYear(), task.lunarMonth, task.lunarDay, task.lunarLeap);
+      if (thisYearSolar && thisYearSolar.getTime() >= startOfDay(now)) {
+        target = thisYearSolar.getTime();
+      } else {
+        const nextYearSolar = solarFromLunar(nowDate.getFullYear() + 1, task.lunarMonth, task.lunarDay, task.lunarLeap);
+        target = nextYearSolar ? nextYearSolar.getTime() : target;
+      }
+    }
     const diff = target - now;
     const days = Math.floor(Math.abs(diff) / (24 * 3600 * 1000));
     if (diff >= 0) {
@@ -729,6 +941,40 @@ els.unitSeg.querySelectorAll(".seg-item").forEach(b =>
 );
 
 els.cronInput.addEventListener("input", refreshCronInfo);
+
+/* 公历/农历切换 */
+els.birthdayCalendarToggle.querySelectorAll(".cal-btn").forEach(btn =>
+  btn.addEventListener("click", () => {
+    formCalendarTypeBirthday = btn.dataset.cal;
+    syncCalendarTypeUI("birthday");
+  })
+);
+els.memorialCalendarToggle.querySelectorAll(".cal-btn").forEach(btn =>
+  btn.addEventListener("click", () => {
+    formCalendarTypeMemorial = btn.dataset.cal;
+    syncCalendarTypeUI("memorial");
+  })
+);
+
+/* 农历选择器变化时更新基准日（用于年份计数） */
+function refreshLunarRefDate(prefix) {
+  const calendarType = prefix === "birthday" ? formCalendarTypeBirthday : formCalendarTypeMemorial;
+  if (calendarType !== "lunar") return;
+  const lunarMonth = parseInt(els[prefix + "LunarMonth"].value, 10) || 1;
+  const lunarDay = parseInt(els[prefix + "LunarDay"].value, 10) || 1;
+  const lunarLeap = els[prefix + "LunarLeap"].checked;
+  const nowYear = new Date().getFullYear();
+  const sd = solarFromLunar(nowYear, lunarMonth, lunarDay, lunarLeap);
+  if (sd) {
+    els[prefix + "Input"].value = ymdStr(sd);
+  }
+}
+
+for (const prefix of ["birthday", "memorial"]) {
+  els[prefix + "LunarMonth"].addEventListener("change", () => refreshLunarRefDate(prefix));
+  els[prefix + "LunarDay"].addEventListener("change", () => refreshLunarRefDate(prefix));
+  els[prefix + "LunarLeap"].addEventListener("change", () => refreshLunarRefDate(prefix));
+}
 
 els.modal.querySelectorAll("[data-close]").forEach(el =>
   el.addEventListener("click", closeModal)
