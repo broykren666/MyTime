@@ -113,7 +113,7 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 .timer-cell.is-done { color: var(--text-soft); }
 .timer-cell.is-birthday { color: var(--warning); }
 .timer-cell.is-today { color: var(--primary-strong); font-weight: 700; }
-.timer-cell.is-safe { color: var(--success); }
+.timer-cell.is-safe { color: var(--primary-strong); }
 .timer-cell.is-warn { color: var(--warning); }
 .timer-cell.is-urgent { color: var(--danger); }
 
