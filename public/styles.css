@@ -1,5 +1,6 @@
 /* ===== 设计系统变量 ===== */
 :root {
+  color-scheme: light;
   --primary: #3B82F6;
   --primary-strong: #2563EB;
   --primary-deep: #1D4ED8;
@@ -21,6 +22,7 @@
 
 /* ===== 暗色主题变量 ===== */
 [data-theme="dark"] {
+  color-scheme: dark;
   --primary: #60A5FA;
   --primary-strong: #3B82F6;
   --primary-deep: #2563EB;

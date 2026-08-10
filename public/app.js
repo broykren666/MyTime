@@ -26,6 +26,10 @@ function loadTasks() {
           const arr = parseFixeddays(task.fixeddayValue);
           task.fixeddayValue = arr.length ? arr.join("/") : "1";
         }
+        // 迁移：倒计时任务缺少 createdAt 则补上当前时间，避免每次刷新重置倒计时
+        if (task.type === "countdown" && !task.createdAt) {
+          task.createdAt = Date.now();
+        }
         return task;
       });
   } catch (e) {
@@ -48,6 +52,7 @@ if (tasks.some(t => t.type === "fixedday")) saveTasks();
 let editingId = null; // null = 添加模式
 const notifiedIds = new Set(); // 已发送过结束通知的倒计时任务 id，避免每秒重复提醒
 const cronCache = new Map(); // 缓存 Croner 实例，key 为 cron 表达式
+const timerCells = new Map(); // taskId → 计时器 DOM 元素，避免每次 updateTimers 做 O(n) querySelector
 
 /* ---------- DOM 引用 ---------- */
 const els = {
@@ -116,6 +121,7 @@ function unitMs(unit) {
 /* ---------- 渲染层 ---------- */
 function renderList() {
   els.list.innerHTML = "";
+  timerCells.clear();
   els.empty.hidden = tasks.length > 0;
 
   tasks.forEach((task, i) => {
@@ -143,10 +149,11 @@ function renderList() {
     tdTime.className = "cell-time";
     tdTime.textContent = formatTime(task);
 
-    // 计时器（动态，data-id 便于每秒刷新）
+    // 计时器（动态，缓存引用避免每秒 querySelector）
     const tdTimer = document.createElement("td");
     tdTimer.className = "timer-cell";
     tdTimer.dataset.timer = task.id;
+    timerCells.set(task.id, tdTimer);
 
     // 操作（修改 / 删除）
     const tdOps = document.createElement("td");
@@ -259,6 +266,7 @@ function openModal(id) {
       els.birthdayInput.value = task.birthdayValue;
     } else if (task.type === "fixedday") {
       els.fixeddayInput.value = task.fixeddayValue;
+      onFixeddayInput(); // 编辑时手动触发校验，确保输入框合法性提示更新
     } else if (task.type === "cron") {
       els.cronInput.value = task.cronValue;
     } else {
@@ -300,6 +308,12 @@ function refreshCronInfo() {
   const info = els.cronInfo;
   const expr = els.cronInput.value.trim();
   if (!expr) { info.hidden = true; return; }
+  if (typeof Cron === "undefined") {
+    info.innerHTML = `<div class="cron-desc">Cron 库加载失败，请检查网络连接</div>`;
+    info.className = "cron-info cron-err";
+    info.hidden = false;
+    return;
+  }
   try {
     const c = new Cron(expr);
     const next = c.nextRun();
@@ -456,10 +470,15 @@ function submitTask(e) {
     base.birthdayValue = els.birthdayInput.value || todayStr();
   } else if (formType === "fixedday") {
     const arr = parseFixeddays(els.fixeddayInput.value);
-    base.fixeddayValue = arr.length ? arr.join(",") : "1";
+    if (arr.length === 0) { alert("固定日输入无效，请输入 1-28、-1、-2、-3，多个用/分隔"); return; }
+    base.fixeddayValue = arr.join("/");
   } else if (formType === "cron") {
     const val = els.cronInput.value.trim();
-    base.cronValue = val || "0 8 * * *";
+    if (!val) { alert("请输入 Cron 表达式"); return; }
+    if (typeof Cron !== "undefined") {
+      try { new Cron(val); } catch (_) { alert("Cron 表达式无效"); return; }
+    }
+    base.cronValue = val;
   } else {
     base.memorialValue = els.memorialInput.value || todayStr();
   }
@@ -485,7 +504,7 @@ function submitTask(e) {
 function updateTimers() {
   const now = Date.now();
   tasks.forEach(task => {
-    const cell = els.list.querySelector(`[data-timer="${task.id}"]`);
+    const cell = timerCells.get(task.id);
     if (!cell) return;
     const { text, cls } = computeTimer(task, now);
     cell.textContent = text;
@@ -495,6 +514,15 @@ function updateTimers() {
     if (task.type === "countdown" && cls === "is-done" && !notifiedIds.has(task.id)) {
       notifiedIds.add(task.id);
       notify(task.name, "倒计时已结束");
+    }
+    // Cron 触发：每个触发周期发送一次通知，重置时清除标记
+    if (task.type === "cron") {
+      if (text === "已触发" && !notifiedIds.has(task.id)) {
+        notifiedIds.add(task.id);
+        notify(task.name, "Cron 任务已触发");
+      } else if (text !== "已触发") {
+        notifiedIds.delete(task.id);
+      }
     }
   });
 }
@@ -544,6 +572,7 @@ function computeTimer(task, now) {
   if (task.type === "cron") {
     const expr = task.cronValue || "";
     if (!expr.trim()) return { text: "未设置表达式", cls: "" };
+    if (typeof Cron === "undefined") return { text: "库未加载", cls: "is-over" };
     let cronInst = cronCache.get(expr);
     if (!cronInst) {
       try {
@@ -572,14 +601,14 @@ function computeTimer(task, now) {
 
   // 倒数日（固定目标日期，可过去可未来）
   if (task.type === "memorial") {
-  const target = new Date((task.memorialValue || todayStr()) + "T00:00:00").getTime();
-  const diff = target - now;
-  const days = Math.floor(Math.abs(diff) / (24 * 3600 * 1000));
-  if (diff >= 0) {
-    if (days === 0) return { text: "今天到期", cls: "is-today" };
-    return { text: `距倒数日 ${days}天`, cls: levelCls(days) };
-  }
-  return { text: `已过期 ${days}天`, cls: "is-over" };
+    const target = new Date((task.memorialValue || todayStr()) + "T00:00:00").getTime();
+    const diff = target - now;
+    const days = Math.floor(Math.abs(diff) / (24 * 3600 * 1000));
+    if (diff >= 0) {
+      if (days === 0) return { text: "今天到期", cls: "is-today" };
+      return { text: `距倒数日 ${days}天`, cls: levelCls(days) };
+    }
+    return { text: `已过期 ${days}天`, cls: "is-over" };
   }
 }
 
