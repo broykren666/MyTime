@@ -93,6 +93,12 @@ function renderList() {
   tasks.forEach((task, i) => {
     const tr = document.createElement("tr");
     tr.dataset.id = task.id;
+    tr.draggable = true;
+
+    // 拖拽手柄
+    const tdDrag = document.createElement("td");
+    tdDrag.className = "col-drag";
+    tdDrag.innerHTML = '<span class="drag-handle" title="拖拽排序">⠿</span>';
 
     // 序号
     const tdIdx = document.createElement("td");
@@ -114,25 +120,66 @@ function renderList() {
     tdTimer.className = "timer-cell";
     tdTimer.dataset.timer = task.id;
 
-    // 操作
+    // 操作（修改 / 删除）
     const tdOps = document.createElement("td");
     tdOps.className = "col-ops";
     const ops = document.createElement("div");
     ops.className = "ops";
 
-    const up = opBtn("↑", "上移", i === 0, () => move(i, -1));
-    const down = opBtn("↓", "下移", i === tasks.length - 1, () => move(i, 1));
     const edit = opBtn("修改", "修改", false, () => openModal(task.id));
     const del = opBtn("删除", "删除", false, () => removeTask(task.id), true);
 
-    ops.append(up, down, edit, del);
+    ops.append(edit, del);
     tdOps.appendChild(ops);
 
-    tr.append(tdIdx, tdName, tdTime, tdTimer, tdOps);
+    tr.append(tdDrag, tdIdx, tdName, tdTime, tdTimer, tdOps);
     els.list.appendChild(tr);
   });
 
+  bindDragSort();
   updateTimers();
+}
+
+/* 拖拽排序：绑定行的拖放事件 */
+let dragFrom = null;
+function bindDragSort() {
+  const rows = els.list.querySelectorAll("tr");
+  rows.forEach(row => {
+    row.addEventListener("dragstart", e => {
+      dragFrom = row.dataset.id;
+      row.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", dragFrom);
+    });
+    row.addEventListener("dragover", e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      if (row.dataset.id !== dragFrom) row.classList.add("drag-over");
+    });
+    row.addEventListener("dragleave", () => row.classList.remove("drag-over"));
+    row.addEventListener("drop", e => {
+      e.preventDefault();
+      const dragTo = row.dataset.id;
+      if (dragTo && dragTo !== dragFrom) moveTask(dragFrom, dragTo);
+      row.classList.remove("drag-over");
+    });
+    row.addEventListener("dragend", () => {
+      row.classList.remove("dragging");
+      rows.forEach(r => r.classList.remove("drag-over"));
+      dragFrom = null;
+    });
+  });
+}
+
+/* 按 id 将任务从 from 移动到 to 的位置 */
+function moveTask(fromId, toId) {
+  const from = tasks.findIndex(t => t.id === fromId);
+  const to = tasks.findIndex(t => t.id === toId);
+  if (from < 0 || to < 0 || from === to) return;
+  const [item] = tasks.splice(from, 1);
+  tasks.splice(to, 0, item);
+  saveTasks();
+  renderList();
 }
 
 function opBtn(label, title, disabled, onClick, danger) {
@@ -152,14 +199,6 @@ function formatTime(task) {
 }
 
 /* ---------- 顺序调整 / 删除 ---------- */
-function move(index, dir) {
-  const target = index + dir;
-  if (target < 0 || target >= tasks.length) return;
-  [tasks[index], tasks[target]] = [tasks[target], tasks[index]];
-  saveTasks();
-  renderList();
-}
-
 function removeTask(id) {
   const task = tasks.find(t => t.id === id);
   if (!task) return;

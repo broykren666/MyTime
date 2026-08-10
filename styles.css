@@ -90,6 +90,11 @@ body {
 }
 .task-table tbody tr:nth-child(even) { background: #FBFCFE; }
 .task-table tbody tr:hover { background: #F0F6FF; }
+.col-drag { width: 28px; text-align: center; color: var(--text-soft); cursor: grab; }
+.drag-handle { font-size: 16px; line-height: 1; user-select: none; }
+tr.dragging { opacity: .45; }
+tr.drag-over td { box-shadow: inset 0 2px 0 var(--primary); }
+tr:hover .drag-handle { color: var(--primary-strong); }
 .col-index { width: 44px; color: var(--text-soft); }
 .col-ops { width: 168px; }
 .idx-badge {
