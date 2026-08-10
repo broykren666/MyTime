@@ -171,19 +171,12 @@ body {
 .daily-quote {
   display: flex;
   align-items: baseline;
-  gap: 10px;
-  padding: 12px 22px 14px;
+  gap: 8px;
+  padding: 8px 22px 10px;
   border-top: 1px solid var(--border);
-  border-left: 4px solid var(--primary-strong);
-}
-.daily-quote .dq-mark {
-  font-size: 30px; line-height: 1;
-  color: var(--primary-strong);
-  font-family: Georgia, "Times New Roman", serif;
-  flex: 0 0 auto;
 }
 .daily-quote .dq-text {
-  font-size: 15px; font-style: italic;
+  font-size: 14px; font-style: italic;
   color: var(--text);
   word-break: break-word;
 }
