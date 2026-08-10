@@ -161,11 +161,9 @@ body {
 .textarea { resize: vertical; min-height: 64px; }
 
 /* ===== 动态输入区（按类型显示）===== */
-.type-panel { display: none; }
-.type-panel.is-shown {
-  display: flex;
-  animation: slideIn .22s ease;
-}
+.type-panel { display: flex; }
+.type-panel[hidden] { display: none; }
+.type-panel.is-shown { animation: slideIn .22s ease; }
 @keyframes slideIn {
   from { opacity: 0; transform: translateY(-6px); }
   to { opacity: 1; transform: translateY(0); }

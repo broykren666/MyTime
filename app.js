@@ -224,9 +224,14 @@ function syncTypeUI() {
     b.classList.toggle("is-active", b.dataset.type === formType);
     b.disabled = locked;
   });
-  // 根据任务类型动态显示对应输入区，隐藏其它（class 控制 + 淡入过渡）
-  const show = type => els[type + "Field"].classList.toggle("is-shown", formType === type);
-  show("cd");
+  // 根据任务类型动态显示对应输入区，隐藏其它（hidden 属性 + 淡入过渡）
+  const fieldKey = { countdown: "cd", birthday: "birthday", memorial: "memorial" };
+  const show = type => {
+    const el = els[fieldKey[type] + "Field"];
+    el.hidden = formType !== type;
+    el.classList.toggle("is-shown", formType === type);
+  };
+  show("countdown");
   show("birthday");
   show("memorial");
   // 禁用隐藏区字段，避免浏览器校验到隐藏的必填框
