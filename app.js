@@ -209,7 +209,10 @@ function opBtn(label, title, disabled, onClick, danger) {
 function formatTime(task) {
   if (task.type === "countdown") return `${task.cdValue} ${UNIT_LABEL[task.cdUnit] || ""}`;
   if (task.type === "birthday") return task.birthdayValue || "—";
-  if (task.type === "fixedday") return `每月 ${task.fixeddayValue || "?"} 日`;
+  if (task.type === "fixedday") {
+    const d = parseInt(task.fixeddayValue, 10) || 1;
+    return d < 0 ? `每月月末倒数第 ${-d} 天` : `每月 ${d} 日`;
+  }
   return task.memorialValue || "—";
 }
 
@@ -405,7 +408,10 @@ function submitTask(e) {
   } else if (formType === "birthday") {
     base.birthdayValue = els.birthdayInput.value || todayStr();
   } else if (formType === "fixedday") {
-    base.fixeddayValue = Math.min(31, Math.max(1, parseInt(els.fixeddayInput.value, 10) || 1));
+    let fv = parseInt(els.fixeddayInput.value, 10);
+    if (!fv || fv === 0) fv = 1;
+    fv = Math.max(-31, Math.min(31, fv));
+    base.fixeddayValue = fv;
   } else {
     base.memorialValue = els.memorialInput.value || todayStr();
   }
@@ -476,10 +482,10 @@ function computeTimer(task, now) {
   }
 
   if (task.type === "fixedday") {
-    const day = Math.min(31, Math.max(1, parseInt(task.fixeddayValue, 10) || 1));
+    const day = parseInt(task.fixeddayValue, 10) || 1;
     const next = nextFixedDay(day, now);
-    if (next.diff === 0) return { text: `今天就是 ${next.month} 月 ${day} 日`, cls: "is-today" };
-    return { text: `距（${next.month} 月 ${day} 日）还有 ${next.diff} 天`, cls: levelCls(next.diff) };
+    if (next.diff === 0) return { text: `今天就是 ${next.month} 月 ${next.date} 日`, cls: "is-today" };
+    return { text: `距（${next.month} 月 ${next.date} 日）还有 ${next.diff} 天`, cls: levelCls(next.diff) };
   }
 
   // 倒数日（固定目标日期，可过去可未来）
@@ -493,20 +499,28 @@ function computeTimer(task, now) {
   return { text: `已过期 ${days} 天`, cls: "is-over" };
 }
 
-// 计算距离下一次「每月 day 日」的天数（本月已过或本月无此日则取下月）
+// 计算距离下一次「每月 day 日」的天数
+// day 为正数：每月 day 日；day 为负数：月末倒数第 |day| 天（如 -1 为月末最后一天）
 function nextFixedDay(day, nowTs) {
   const base = new Date(nowTs);
   const y = base.getFullYear();
   const m = base.getMonth();
   const dayMs = 24 * 3600 * 1000;
-  let cand = new Date(y, m, day, 0, 0, 0);
-  if (cand.getMonth() !== m) cand = new Date(y, m + 1, day, 0, 0, 0); // 本月无此日（如 2 月 30 日）
+  // 构造指定月份（monthIndex）的目标日；负数基于该月月末往前倒数，避开负 day 的时区歧义
+  function candFor(monthIndex) {
+    if (day > 0) return new Date(y, monthIndex, day, 0, 0, 0);
+    const firstNext = new Date(y, monthIndex + 1, 1, 0, 0, 0);
+    firstNext.setDate(0); // 该月最后一天（本地安全）
+    firstNext.setDate(firstNext.getDate() + day + 1); // day 为负，+1 因已为月末倒数第 1 天
+    return firstNext;
+  }
+  let cand = candFor(m);
   let diff = Math.round((cand.getTime() - startOfDay(nowTs)) / dayMs);
   if (diff < 0) {
-    cand = new Date(y, m + 1, day, 0, 0, 0);
+    cand = candFor(m + 1);
     diff = Math.round((cand.getTime() - startOfDay(nowTs)) / dayMs);
   }
-  return { diff, month: cand.getMonth() + 1 };
+  return { diff, month: cand.getMonth() + 1, date: cand.getDate() };
 }
 
 // 按剩余天数返回颜色分级：>30 绿 / 10-30 橙 / <10 红；type 决定文案前缀由调用方处理

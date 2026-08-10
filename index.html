@@ -120,8 +120,8 @@
 
         <!-- 固定日类型输入区 -->
         <div class="field type-panel" id="fixeddayField" hidden>
-          <span class="field-label">每月几号</span>
-          <input type="number" id="fixeddayInput" class="input cd-value" min="1" max="31" step="1" value="1" placeholder="1-31" />
+          <span class="field-label">每月几号（支持负数：如 -1 表示月末倒数第 1 天）</span>
+          <input type="number" id="fixeddayInput" class="input cd-value" min="-31" max="31" step="1" value="1" placeholder="1-31 或 -1~-31" />
         </div>
 
         <div class="modal-foot">
