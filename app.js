@@ -188,11 +188,13 @@ function openModal(id) {
     formType = "date";
     formUnit = "year";
     els.dateInput.value = todayStr();
+    els.cdValue.value = 1;
   }
 
+  els.modal.hidden = false;
+  // 先显示弹窗再同步类型 UI，避免隐藏父级下 class 切换渲染失效
   syncTypeUI();
   syncUnitUI();
-  els.modal.hidden = false;
 }
 
 function closeModal() {
@@ -204,8 +206,14 @@ function syncTypeUI() {
   els.typeSeg.querySelectorAll(".seg-item").forEach(b =>
     b.classList.toggle("is-active", b.dataset.type === formType)
   );
-  els.dateField.hidden = formType !== "date";
-  els.cdField.hidden = formType !== "countdown";
+  // 根据任务类型动态显示对应输入区，隐藏另一个（用 class 控制，附带淡入过渡）
+  const isDate = formType === "date";
+  els.dateField.classList.toggle("is-shown", isDate);
+  els.cdField.classList.toggle("is-shown", !isDate);
+  // 禁用隐藏区字段，避免浏览器校验到隐藏的必填框
+  els.dateInput.disabled = !isDate;
+  els.cdValue.disabled = isDate;
+  els.unitSeg.querySelectorAll(".seg-item").forEach(b => (b.disabled = isDate));
 }
 
 function syncUnitUI() {

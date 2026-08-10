@@ -74,16 +74,16 @@
         </div>
 
         <!-- 日期类型输入区 -->
-        <div class="field" id="dateField">
+        <div class="field type-panel is-shown" id="dateField">
           <span class="field-label">目标日期</span>
           <input type="date" id="dateInput" class="input" />
         </div>
 
         <!-- 倒计时类型输入区 -->
-        <div class="field" id="countdownField" hidden>
+        <div class="field type-panel" id="countdownField">
           <span class="field-label">倒计时设置</span>
           <div class="countdown-row">
-            <input type="number" id="cdValueInput" class="input cd-value" min="1" step="1" placeholder="数值" />
+            <input type="number" id="cdValueInput" class="input cd-value" min="1" step="1" value="1" placeholder="数值" />
             <div class="seg seg-unit" id="unitSeg">
               <button type="button" class="seg-item is-active" data-unit="year">年</button>
               <button type="button" class="seg-item" data-unit="month">月</button>
