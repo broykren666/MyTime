@@ -308,11 +308,11 @@ function openModal(id) {
   els.birthdayLunarYear.value = String(nowYear);
   els.birthdayLunarMonth.value = "1";
   els.birthdayLunarDay.value = "1";
-  els.birthdayLunarLeap.checked = false;
+  els.birthdayLunarLeap.classList.remove("is-active");
   els.memorialLunarYear.value = String(nowYear);
   els.memorialLunarMonth.value = "1";
   els.memorialLunarDay.value = "1";
-  els.memorialLunarLeap.checked = false;
+  els.memorialLunarLeap.classList.remove("is-active");
   formCalendarTypeBirthday = "solar";
   formCalendarTypeMemorial = "solar";
 
@@ -331,7 +331,7 @@ function openModal(id) {
         els.birthdayLunarYear.value = task.lunarYear || String(nowYear);
         els.birthdayLunarMonth.value = task.lunarMonth || 1;
         els.birthdayLunarDay.value = task.lunarDay || 1;
-        els.birthdayLunarLeap.checked = task.lunarLeap || false;
+        els.birthdayLunarLeap.classList.toggle("is-active", task.lunarLeap);
       }
       els.birthdayInput.value = task.birthdayValue || todayStr();
     } else if (task.type === "fixedday") {
@@ -345,7 +345,7 @@ function openModal(id) {
         els.memorialLunarYear.value = task.lunarYear || String(nowYear);
         els.memorialLunarMonth.value = task.lunarMonth || 1;
         els.memorialLunarDay.value = task.lunarDay || 1;
-        els.memorialLunarLeap.checked = task.lunarLeap || false;
+        els.memorialLunarLeap.classList.toggle("is-active", task.lunarLeap);
       }
       els.memorialInput.value = task.memorialValue || todayStr();
     }
@@ -409,7 +409,7 @@ function syncCalendarTypeUI(prefix) {
   const lunarPicker = els[prefix + "LunarPicker"];
 
   // 更新按钮状态
-  toggle.querySelectorAll(".cal-btn").forEach(btn => {
+  toggle.querySelectorAll(".seg-item").forEach(btn => {
     btn.classList.toggle("is-active", btn.dataset.cal === (isLunar ? "lunar" : "solar"));
   });
   // 切换输入面板
@@ -959,13 +959,13 @@ els.unitSeg.querySelectorAll(".seg-item").forEach(b =>
 els.cronInput.addEventListener("input", refreshCronInfo);
 
 /* 公历/农历切换 */
-els.birthdayCalendarToggle.querySelectorAll(".cal-btn").forEach(btn =>
+els.birthdayCalendarToggle.querySelectorAll(".seg-item").forEach(btn =>
   btn.addEventListener("click", () => {
     formCalendarTypeBirthday = btn.dataset.cal;
     syncCalendarTypeUI("birthday");
   })
 );
-els.memorialCalendarToggle.querySelectorAll(".cal-btn").forEach(btn =>
+els.memorialCalendarToggle.querySelectorAll(".seg-item").forEach(btn =>
   btn.addEventListener("click", () => {
     formCalendarTypeMemorial = btn.dataset.cal;
     syncCalendarTypeUI("memorial");
@@ -979,7 +979,7 @@ function refreshLunarRefDate(prefix) {
   const lunarYear = parseInt(els[prefix + "LunarYear"].value, 10) || new Date().getFullYear();
   const lunarMonth = parseInt(els[prefix + "LunarMonth"].value, 10) || 1;
   const lunarDay = parseInt(els[prefix + "LunarDay"].value, 10) || 1;
-  const lunarLeap = els[prefix + "LunarLeap"].checked;
+  const lunarLeap = els[prefix + "LunarLeap"].classList.contains("is-active");
   const sd = solarFromLunar(lunarYear, lunarMonth, lunarDay, lunarLeap);
   if (sd) {
     els[prefix + "Input"].value = ymdStr(sd);
@@ -990,7 +990,10 @@ for (const prefix of ["birthday", "memorial"]) {
   els[prefix + "LunarYear"].addEventListener("change", () => refreshLunarRefDate(prefix));
   els[prefix + "LunarMonth"].addEventListener("change", () => refreshLunarRefDate(prefix));
   els[prefix + "LunarDay"].addEventListener("change", () => refreshLunarRefDate(prefix));
-  els[prefix + "LunarLeap"].addEventListener("change", () => refreshLunarRefDate(prefix));
+  els[prefix + "LunarLeap"].addEventListener("click", () => {
+    els[prefix + "LunarLeap"].classList.toggle("is-active");
+    refreshLunarRefDate(prefix);
+  });
 }
 
 els.modal.querySelectorAll("[data-close]").forEach(el =>

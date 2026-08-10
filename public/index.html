@@ -111,9 +111,9 @@
         <div class="field type-panel" id="birthdayField" hidden>
           <div class="field-label-row">
             <span class="field-label">设置纪念日期</span>
-            <div class="calendar-toggle" id="birthdayCalendarToggle">
-              <button type="button" class="cal-btn is-active" data-cal="solar">公历</button>
-              <button type="button" class="cal-btn" data-cal="lunar">农历</button>
+            <div class="seg calendar-seg" id="birthdayCalendarToggle">
+              <button type="button" class="seg-item is-active" data-cal="solar">公历</button>
+              <button type="button" class="seg-item" data-cal="lunar">农历</button>
             </div>
           </div>
           <input type="date" id="birthdayInput" class="input" />
@@ -122,9 +122,7 @@
               <select class="input lunar-select lunar-year" id="birthdayLunarYear"></select>
               <select class="input lunar-select" id="birthdayLunarMonth"></select>
               <select class="input lunar-select lunar-day" id="birthdayLunarDay"></select>
-              <label class="leap-check">
-                <input type="checkbox" id="birthdayLunarLeap" /> 闰月
-              </label>
+              <button type="button" class="leap-btn" id="birthdayLunarLeap">闰月</button>
             </div>
           </div>
         </div>
@@ -133,9 +131,9 @@
         <div class="field type-panel" id="memorialField" hidden>
           <div class="field-label-row">
             <span class="field-label">设置目标日期</span>
-            <div class="calendar-toggle" id="memorialCalendarToggle">
-              <button type="button" class="cal-btn is-active" data-cal="solar">公历</button>
-              <button type="button" class="cal-btn" data-cal="lunar">农历</button>
+            <div class="seg calendar-seg" id="memorialCalendarToggle">
+              <button type="button" class="seg-item is-active" data-cal="solar">公历</button>
+              <button type="button" class="seg-item" data-cal="lunar">农历</button>
             </div>
           </div>
           <input type="date" id="memorialInput" class="input" />
@@ -144,9 +142,7 @@
               <select class="input lunar-select lunar-year" id="memorialLunarYear"></select>
               <select class="input lunar-select" id="memorialLunarMonth"></select>
               <select class="input lunar-select lunar-day" id="memorialLunarDay"></select>
-              <label class="leap-check">
-                <input type="checkbox" id="memorialLunarLeap" /> 闰月
-              </label>
+              <button type="button" class="leap-btn" id="memorialLunarLeap">闰月</button>
             </div>
           </div>
         </div>

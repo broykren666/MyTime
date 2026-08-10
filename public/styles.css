@@ -273,7 +273,7 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 .cron-info .cron-desc { font-weight: 500; }
 .cron-info .cron-next { font-family: var(--mono); font-size: 12px; margin-top: 2px; }
 
-/* ===== 公历/农历切换按钮 ===== */
+/* ===== 公历/农历标签式单选 ===== */
 .field-label-row {
   display: flex;
   align-items: center;
@@ -281,34 +281,8 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   margin-bottom: 8px;
 }
 .field-label-row .field-label { margin-bottom: 0; }
-.calendar-toggle {
-  display: flex;
-  gap: 4px;
-  flex-shrink: 0;
-}
-.cal-btn {
-  padding: 2.5px 10px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--text-soft);
-  font-size: 0.78rem;
-  font-family: inherit;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  line-height: 1.4;
-}
-.cal-btn.is-active {
-  background: var(--primary);
-  color: #fff;
-  border-color: var(--primary);
-}
-.cal-btn:hover:not(.is-active) {
-  background: #F1F5F9;
-}
-[data-theme="dark"] .cal-btn:hover:not(.is-active) {
-  background: #334155;
-}
+.calendar-seg { flex-shrink: 0; }
+.calendar-seg .seg-item { padding: 3px 10px; font-size: 0.78rem; }
 
 /* ===== 农历选择器 ===== */
 .lunar-picker {
@@ -330,25 +304,34 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 .lunar-select.lunar-day {
   flex: 0.75;
 }
-.leap-check {
+/* 闰月切换按钮，与 seg-item 风格统一 */
+.leap-btn {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  font-size: 0.82rem;
+  justify-content: center;
+  border: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 500;
   color: var(--text-soft);
-  cursor: pointer;
-  user-select: none;
+  padding: 3px 10px;
+  border-radius: 6px;
+  transition: all .18s ease;
   white-space: nowrap;
-  padding: 0 2px;
-  margin: 0;
   flex-shrink: 0;
+  user-select: none;
 }
-.leap-check input[type="checkbox"] {
-  width: 14px;
-  height: 14px;
-  cursor: pointer;
-  accent-color: var(--primary);
-  margin: 0;
+.leap-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary-strong);
+}
+.leap-btn.is-active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  font-weight: 600;
 }
 
 /* ===== 弹窗底部 ===== */
