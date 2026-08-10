@@ -304,8 +304,7 @@ function refreshCronInfo() {
     const c = new Cron(expr);
     const next = c.nextRun();
     if (!next) { info.hidden = true; return; }
-    const desc = c.getPattern ? c.getPattern() : expr;
-    info.innerHTML = `<div class="cron-desc">${desc}</div><div class="cron-next">下次触发：${formatDateTime(next)}</div>`;
+    info.innerHTML = `<div class="cron-next">下次触发：${formatDateTime(next)}</div>`;
     info.className = "cron-info cron-ok";
     info.hidden = false;
     // 刷新缓存供 computeTimer 复用
