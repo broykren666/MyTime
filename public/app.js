@@ -581,6 +581,7 @@ function computeTimer(task, now) {
     return { text: `距倒数日 ${days}天`, cls: levelCls(days) };
   }
   return { text: `已过期 ${days}天`, cls: "is-over" };
+  }
 }
 
 // 计算距离下一次「每月 day 日」的天数
