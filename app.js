@@ -43,6 +43,8 @@ const els = {
   list: document.getElementById("taskList"),
   empty: document.getElementById("emptyState"),
   addBtn: document.getElementById("addBtn"),
+  themeBtn: document.getElementById("themeBtn"),
+  themeIcon: document.getElementById("themeIcon"),
   modal: document.getElementById("modal"),
   modalTitle: document.getElementById("modalTitle"),
   form: document.getElementById("taskForm"),
@@ -446,6 +448,28 @@ function notify(title, body) {
     console.warn("发送浏览器通知失败", e);
   }
 }
+
+/* ---------- 主题切换 ---------- */
+const THEME_KEY = "mytime_theme";
+function applyTheme(theme) {
+  const dark = theme === "dark";
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+  els.themeIcon.textContent = dark ? "☀️" : "🌙";
+}
+function toggleTheme() {
+  const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  applyTheme(next);
+  try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+}
+// 初始化：优先读取本地保存，其次跟随系统偏好
+(function initTheme() {
+  let saved = null;
+  try { saved = localStorage.getItem(THEME_KEY); } catch (e) {}
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  applyTheme(saved || (prefersDark ? "dark" : "light"));
+})();
+
+els.themeBtn.addEventListener("click", toggleTheme);
 
 /* ---------- 启动 ---------- */
 renderList();

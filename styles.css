@@ -19,6 +19,23 @@
   --mono: "SF Mono", "JetBrains Mono", Consolas, monospace;
 }
 
+/* ===== 暗色主题变量 ===== */
+[data-theme="dark"] {
+  --primary: #60A5FA;
+  --primary-strong: #3B82F6;
+  --primary-deep: #2563EB;
+  --bg: #0F172A;
+  --surface: #1E293B;
+  --text: #E2E8F0;
+  --text-soft: #94A3B8;
+  --danger: #F87171;
+  --success: #34D399;
+  --warning: #FBBF24;
+  --border: #334155;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
@@ -27,6 +44,11 @@ body {
   color: var(--text);
   min-height: 100vh;
   line-height: 1.5;
+  transition: background .25s ease, color .25s ease;
+}
+
+[data-theme="dark"] body {
+  background: linear-gradient(160deg, #1E293B 0%, var(--bg) 45%);
 }
 
 .app {
@@ -64,8 +86,11 @@ body {
 .btn-primary:hover { background: linear-gradient(135deg, var(--primary-strong), var(--primary-deep)); transform: translateY(-1px); box-shadow: 0 10px 22px rgba(37, 99, 235, 0.40); }
 .btn-primary:active { transform: translateY(0); }
 .plus { font-size: 18px; line-height: 1; }
+#themeBtn { width: 42px; padding: 10px 0; justify-content: center; font-size: 16px; line-height: 1; }
 .btn-ghost { background: #F1F5F9; color: var(--text-soft); }
 .btn-ghost:hover { background: #E2E8F0; }
+[data-theme="dark"] .btn-ghost { background: #334155; color: var(--text-soft); }
+[data-theme="dark"] .btn-ghost:hover { background: #475569; }
 
 /* ===== 卡片 ===== */
 .card {
@@ -90,6 +115,11 @@ body {
 }
 .task-table tbody tr:nth-child(even) { background: #FBFCFE; }
 .task-table tbody tr:hover { background: #F0F6FF; }
+[data-theme="dark"] .task-table thead th { background: #243044; color: var(--text-soft); }
+[data-theme="dark"] .task-table tbody tr:nth-child(even) { background: #1A2538; }
+[data-theme="dark"] .task-table tbody tr:hover { background: #25324A; }
+[data-theme="dark"] .task-table tbody td { border-bottom-color: #2A3850; }
+[data-theme="dark"] .idx-badge { background: #2A3850; color: var(--primary); }
 .col-drag { width: 28px; text-align: center; color: var(--text-soft); cursor: grab; }
 .drag-handle { font-size: 16px; line-height: 1; user-select: none; }
 tr.dragging { opacity: .45; }
@@ -125,6 +155,7 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   color: var(--text); font-family: inherit;
   transition: all .15s ease;
 }
+[data-theme="dark"] .op-btn { background: #0F172A; color: var(--text); }
 .op-btn:hover { border-color: var(--primary); color: var(--primary-strong); transform: translateY(-1px); }
 .op-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
 .op-btn.danger:hover { border-color: var(--danger); color: var(--danger); }
@@ -146,6 +177,7 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   box-shadow: var(--shadow-lg); padding: 24px;
   animation: pop .22s cubic-bezier(.2,.9,.3,1.2);
 }
+[data-theme="dark"] .modal-overlay { background: rgba(2, 6, 23, 0.6); }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes pop { from { opacity: 0; transform: scale(.94) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
@@ -163,6 +195,11 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   background: #fff; transition: border-color .15s, box-shadow .15s;
 }
 .input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
+[data-theme="dark"] .input {
+  background: #0F172A; color: var(--text); border-color: var(--border);
+}
+[data-theme="dark"] .input::placeholder { color: #64748B; }
+[data-theme="dark"] .input:focus { box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2); }
 .textarea { resize: vertical; min-height: 64px; }
 
 /* ===== 动态输入区（按类型显示）===== */
@@ -176,6 +213,7 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 
 /* ===== 标签式单选 ===== */
 .seg { display: inline-flex; background: #F1F5F9; border-radius: var(--radius-sm); padding: 4px; gap: 4px; }
+[data-theme="dark"] .seg { background: #0F172A; }
 .seg-item {
   border: none; background: transparent; cursor: pointer; font-family: inherit;
   font-size: 13.5px; font-weight: 500; color: var(--text-soft);
