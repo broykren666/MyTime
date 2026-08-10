@@ -308,8 +308,8 @@ function computeTimer(task, now) {
   if (task.type === "birthday") {
     const born = new Date((task.birthdayValue || todayStr()) + "T00:00:00");
     const next = nextBirthday(born, now);
-    if (next.diff === 0) return { text: "生日快乐 🎂", cls: "is-birthday" };
-    return { text: `距下次生日 ${next.diff} 天`, cls: "" };
+    if (next.diff === 0) return { text: "纪念日快乐 🎂", cls: "is-birthday" };
+    return { text: `距下次纪念日 ${next.diff} 天`, cls: "" };
   }
 
   // 纪念（固定目标日期，可过去可未来）
