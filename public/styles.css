@@ -199,6 +199,10 @@ body {
 
 /* ===== 表格 ===== */
 .table-wrap { width: 100%; overflow-x: auto; }
+/* 首屏 preload：JS 渲染出列表前先隐藏，避免「空表格闪一下」；渲染后淡入 */
+.table-wrap.preload { visibility: hidden; }
+.table-wrap.revealed { animation: tableFadeIn .18s ease-out; }
+@keyframes tableFadeIn { from { opacity: 0; } to { opacity: 1; } }
 .task-table { width: 100%; border-collapse: collapse; min-width: 720px; }
 .task-table thead th {
   text-align: left; font-size: 13px; font-weight: 600;

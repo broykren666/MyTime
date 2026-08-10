@@ -142,9 +142,11 @@ function unitMs(unit) {
 
 /* ---------- 渲染层 ---------- */
 function renderList() {
-  els.list.innerHTML = "";
   timerCells.clear();
   els.empty.hidden = tasks.length > 0;
+
+  // 构建到临时片段，再一次性替换，避免“先清空后重建”导致的刷新闪烁
+  const frag = document.createDocumentFragment();
 
   tasks.forEach((task, i) => {
     const tr = document.createElement("tr");
@@ -190,11 +192,25 @@ function renderList() {
     tdOps.appendChild(ops);
 
     tr.append(tdDrag, tdIdx, tdName, tdTime, tdTimer, tdOps);
-    els.list.appendChild(tr);
+    frag.appendChild(tr);
   });
 
+  els.list.replaceChildren(frag);
   bindDragSort();
   updateTimers();
+  revealTable();
+}
+
+// 首屏：列表真正渲染完成后才显示表格区，避免「空列表闪一下」
+let _tableRevealed = false;
+function revealTable() {
+  if (_tableRevealed) return;
+  _tableRevealed = true;
+  const wrap = els.list.closest(".table-wrap");
+  if (wrap) {
+    wrap.classList.remove("preload");
+    wrap.classList.add("revealed");
+  }
 }
 
 /* 拖拽排序：绑定行的拖放事件 */
