@@ -86,9 +86,6 @@ body {
 }
 .btn-primary:hover { background: linear-gradient(135deg, var(--primary-strong), var(--primary-deep)); transform: translateY(-1px); box-shadow: 0 10px 22px rgba(37, 99, 235, 0.40); }
 .btn-primary:active { transform: translateY(0); }
-.btn:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; transform: none; }
-.btn:disabled:hover { transform: none; box-shadow: none; }
-.btn-primary:disabled:hover { background: linear-gradient(135deg, var(--primary), var(--primary-strong)); }
 .plus { font-size: 18px; line-height: 1; }
 #themeBtn { width: 42px; padding: 10px 0; justify-content: center; font-size: 16px; line-height: 1; }
 .db-icon { font-size: 15px; line-height: 1; }

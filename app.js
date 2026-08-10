@@ -270,7 +270,6 @@ function openDataModal() {
   pendingImport = null;
   els.importInput.value = "";
   els.importFileName.textContent = "";
-  els.importBtn.disabled = true;
   hideDataMsg();
   els.dataModal.hidden = false;
 }
@@ -316,7 +315,6 @@ function onImportFilePicked(file) {
         .map(t => ({ ...t, type: normalizeType(t.type) }));
       pendingImport = valid;
       els.importFileName.textContent = `${file.name}（${valid.length} 条）`;
-      els.importBtn.disabled = valid.length === 0;
       if (valid.length === 0) {
         showDataMsg("文件中没有有效的任务数据", false);
       } else {
@@ -325,20 +323,21 @@ function onImportFilePicked(file) {
     } catch (e) {
       pendingImport = null;
       els.importFileName.textContent = "";
-      els.importBtn.disabled = true;
       showDataMsg("解析失败：" + e.message, false);
     }
   };
   reader.onerror = () => {
     pendingImport = null;
-    els.importBtn.disabled = true;
     showDataMsg("读取文件失败", false);
   };
   reader.readAsText(file);
 }
 
 function doImport() {
-  if (!pendingImport) return;
+  if (!pendingImport || pendingImport.length === 0) {
+    showDataMsg("请先选择要导入的 JSON 文件", false);
+    return;
+  }
   const n = pendingImport.length;
   if (!confirm(`确定用选中的 ${n} 条数据覆盖当前全部 ${tasks.length} 条数据吗？此操作不可撤销。`)) return;
   tasks = pendingImport.map(t => ({ ...t }));
@@ -348,7 +347,6 @@ function doImport() {
   pendingImport = null;
   els.importInput.value = "";
   els.importFileName.textContent = "";
-  els.importBtn.disabled = true;
   showDataMsg(`已导入并覆盖 ${n} 条任务`, true);
 }
 
