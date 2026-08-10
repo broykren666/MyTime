@@ -5,6 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MyTime 任务计时器</title>
   <link rel="stylesheet" href="styles.css" />
+  <script>
+    // 提前应用主题，避免暗色下刷新白闪
+    (function () {
+      try {
+        var t = localStorage.getItem("mytime_theme");
+        if (!t) t = (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+        document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body>
   <div class="app">
@@ -14,12 +24,14 @@
         <span class="brand-dot"></span>
         <h1>MyTime 任务计时器</h1>
       </div>
-      <button id="themeBtn" class="btn btn-ghost" type="button" title="切换主题" aria-label="切换主题">
-        <span id="themeIcon">🌙</span>
-      </button>
-      <button id="addBtn" class="btn btn-primary">
-        <span class="plus">+</span> 添加任务
-      </button>
+      <div class="top-actions">
+        <button id="themeBtn" class="btn btn-ghost" type="button" title="切换主题" aria-label="切换主题">
+          <span id="themeIcon">🌙</span>
+        </button>
+        <button id="addBtn" class="btn btn-primary">
+          <span class="plus">+</span> 添加任务
+        </button>
+      </div>
     </header>
 
     <!-- 任务列表卡片 -->

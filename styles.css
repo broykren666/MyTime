@@ -71,6 +71,7 @@ body {
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.18);
 }
 .topbar h1 { font-size: 24px; font-weight: 600; letter-spacing: 0.2px; }
+.top-actions { display: flex; align-items: center; gap: 10px; }
 
 /* ===== 按钮 ===== */
 .btn {
