@@ -758,6 +758,8 @@ function updateTimers() {
     const label = cell.querySelector(".gantt-label");
 
     cell.className = "timer-cell has-gantt" + (cls ? " " + cls : "");
+    // 甘特图填充色按剩余比例分段上色（绿/蓝/黄/橙/红）
+    fill.className = "gantt-fill" + (cls ? " " + cls : "");
     fill.style.width = (progress * 100).toFixed(2) + "%";
     label.textContent = text;
 
@@ -800,13 +802,12 @@ function computeTimer(task, now) {
     const remain = end - now;
     if (remain <= 0) return { text: "已结束", cls: "is-done", progress: 0, targetLabel: fmtDate(end) };
 
-    // 按剩余分钟分级（不足 1 分钟按 0 处理归为红色）
-    const mins = Math.max(0, Math.floor(remain / 60000));
     // 进度 = 剩余占比（从左往右随时间递减）
+    const progress = Math.max(0, Math.min(1, remain / total));
     return {
       text: fmtCountdown(remain),
-      cls: minuteLevelCls(mins),
-      progress: Math.max(0, Math.min(1, remain / total)),
+      cls: progressLevelCls(progress),
+      progress,
       targetLabel: fmtDate(end)
     };
   }
@@ -821,10 +822,11 @@ function computeTimer(task, now) {
       const refYear = getReferenceYear(task);
       const yLabel = refYear ? `${nowDate.getFullYear() - refYear}年 | ` : "";
       if (diffDays === 0) return { text: `${yLabel}🎉纪念日快乐`, cls: "is-red", progress: 0, targetLabel: fmtDate(nextTs) };
+      const progress = 1 - progressBetween(prevAnnualOccurrence(nextTs, now), nextTs, now);
       return {
         text: `${yLabel}${fmtCountdown(nextTs - now)}`,
-        cls: dayLevelCls(diffDays),
-        progress: 1 - progressBetween(prevAnnualOccurrence(nextTs, now), nextTs, now),
+        cls: progressLevelCls(progress),
+        progress,
         targetLabel: fmtDate(nextTs)
       };
     }
@@ -835,10 +837,11 @@ function computeTimer(task, now) {
     const next = nextBirthday(born, now);
     const nextTs = next.nextTs;
     if (next.diff === 0) return { text: `${yLabel}🎉纪念日快乐`, cls: "is-red", progress: 0, targetLabel: fmtDate(nextTs) };
+    const progress = 1 - progressBetween(prevAnnualOccurrence(nextTs, now), nextTs, now);
     return {
       text: `${yLabel}${fmtCountdown(nextTs - now)}`,
-      cls: dayLevelCls(next.diff),
-      progress: 1 - progressBetween(prevAnnualOccurrence(nextTs, now), nextTs, now),
+      cls: progressLevelCls(progress),
+      progress,
       targetLabel: fmtDate(nextTs)
     };
   }
@@ -855,10 +858,11 @@ function computeTimer(task, now) {
     // 月内周期：起点 = 本月 1 日 0 点，终点 = 目标日 0 点，进度 = 剩余天数占比
     const monthStartTs = new Date(new Date(now).getFullYear(), best.month - 1, 1, 0, 0, 0).getTime();
     if (best.diff === 0) return { text: `今天就是（${best.month}月${best.date}日）`, cls: "is-red", progress: 0, targetLabel: `${best.month}月${best.date}日` };
+    const progress = 1 - progressBetween(monthStartTs, nextTs, now);
     return {
       text: `${best.month}月${best.date}日 | ${fmtCountdown(nextTs - now)}`,
-      cls: dayLevelCls(best.diff),
-      progress: 1 - progressBetween(monthStartTs, nextTs, now),
+      cls: progressLevelCls(progress),
+      progress,
       targetLabel: `${best.month}月${best.date}日`
     };
   }
@@ -888,12 +892,11 @@ function computeTimer(task, now) {
       if (next2) period = Math.max(1, next2.getTime() - next.getTime());
     } catch (e) { /* 退化用 remain */ }
     const prevTs = next.getTime() - period;
-    // 按剩余分钟分级（不足 1 分钟按 0 处理归为红色）
-    const mins = Math.max(0, Math.floor(remain / 60000));
+    const progress = 1 - progressBetween(prevTs, next.getTime(), now);
     return {
       text: fmtCountdown(remain),
-      cls: minuteLevelCls(mins),
-      progress: 1 - progressBetween(prevTs, next.getTime(), now),
+      cls: progressLevelCls(progress),
+      progress,
       targetLabel: "Cron"
     };
   }
@@ -918,7 +921,8 @@ function computeTimer(task, now) {
       if (days === 0) return { text: "今天到期", cls: "is-red", progress: 0, targetLabel: fmtDate(target) };
       // 以「一年前到目标日」为一个周期估算进度
       const from = target - unitMs("year");
-      return { text: fmtCountdown(target - now), cls: dayLevelCls(days), progress: 1 - progressBetween(from, target, now), targetLabel: fmtDate(target) };
+      const progress = 1 - progressBetween(from, target, now);
+      return { text: fmtCountdown(target - now), cls: progressLevelCls(progress), progress, targetLabel: fmtDate(target) };
     }
     return { text: `已过期 ${days}天`, cls: "is-over", progress: 0, targetLabel: fmtDate(target) };
   }
@@ -1018,22 +1022,15 @@ function onFixeddayInput() {
   if (newVal !== raw) els.fixeddayInput.value = newVal;
 }
 
-// 按剩余天数返回颜色分级（5 档）：>10 白 / 10-7 蓝 / 6-4 黄 / 3-1 橙 / 0 红
-function dayLevelCls(days) {
-  if (days === 0) return "is-red";
-  if (days <= 3) return "is-orange";
-  if (days <= 6) return "is-yellow";
-  if (days <= 10) return "is-blue";
-  return "";
-}
-
-// 按剩余分钟返回颜色分级（5 档）：>10 白 / 10-5 蓝 / 5-3 黄 / 3-1 橙 / <1 红
-function minuteLevelCls(minutes) {
-  if (minutes < 1) return "is-red";
-  if (minutes <= 3) return "is-orange";
-  if (minutes <= 5) return "is-yellow";
-  if (minutes <= 10) return "is-blue";
-  return "";
+// 按剩余比例（progress，0~1）返回甘特图颜色分级：
+// 100%-80% 绿 / 80%-60% 蓝 / 60%-40% 黄 / 40%-20% 橙 / 20%-0% 红
+function progressLevelCls(progress) {
+  const p = Math.max(0, Math.min(1, progress));
+  if (p > 0.8) return "";          // 绿（基础色，无需额外类）
+  if (p > 0.6) return "is-blue";
+  if (p > 0.4) return "is-yellow";
+  if (p > 0.2) return "is-orange";
+  return "is-red";
 }
 
 // 计算距离下一次生日的天数（今年若已过则取明年）
