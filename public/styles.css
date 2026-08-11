@@ -518,7 +518,7 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   gap: 8px;
   font-size: 1.35rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--text);
   letter-spacing: .05em;
 }
 .mc-year__text {
