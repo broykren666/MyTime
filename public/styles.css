@@ -232,6 +232,7 @@ body {
 .table-wrap.revealed { animation: tableFadeIn .18s ease-out; }
 @keyframes tableFadeIn { from { opacity: 0; } to { opacity: 1; } }
 .task-table { width: 100%; border-collapse: collapse; min-width: 720px; }
+.col-timer { min-width: 220px; }
 .task-table thead th {
   position: sticky; top: 0; z-index: 2;
   text-align: left; font-size: 13px; font-weight: 600;
@@ -265,9 +266,11 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 }
 .cell-name { font-weight: 500; }
 .cell-time { color: var(--text-soft); white-space: nowrap; }
+/* 计时器列：纯文字回退样式（无甘特图时） */
 .timer-cell {
   font-family: var(--mono); font-size: 13.5px; font-weight: 600;
   white-space: nowrap; color: var(--text);
+  min-width: 220px;
 }
 .timer-cell.is-over { color: var(--text-soft); opacity: .8; }
 .timer-cell.is-done { color: var(--text-soft); }
@@ -275,6 +278,59 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 .timer-cell.is-yellow { color: var(--warning); }
 .timer-cell.is-orange { color: #EA580C; }
 .timer-cell.is-red { color: var(--danger); font-weight: 700; }
+
+/* ===== 甘特图进度条 ===== */
+.timer-cell.has-gantt { padding: 8px 12px; font-family: var(--font); font-weight: 400; }
+.gantt-bar {
+  position: relative;
+  height: 22px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-soft) 18%, transparent);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+.gantt-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--primary), var(--success));
+  transition: width .6s cubic-bezier(.22,.61,.36,1);
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.35);
+}
+.gantt-label {
+  position: relative;
+  z-index: 1;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--mono);
+  white-space: nowrap;
+  color: var(--text);
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.55);
+}
+.gantt-target {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-soft);
+  font-family: var(--mono);
+  letter-spacing: .3px;
+}
+
+/* 颜色分级：进度条填充随 cls 变化 */
+.timer-cell.is-red .gantt-fill { background: linear-gradient(90deg, #F87171, var(--danger)); box-shadow: 0 0 8px rgba(239, 68, 68, 0.4); }
+.timer-cell.is-red .gantt-label { color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35); }
+.timer-cell.is-orange .gantt-fill { background: linear-gradient(90deg, #FBBF24, #EA580C); }
+.timer-cell.is-yellow .gantt-fill { background: linear-gradient(90deg, #FDE68A, var(--warning)); }
+.timer-cell.is-blue .gantt-fill { background: linear-gradient(90deg, var(--primary), var(--primary-strong)); }
+.timer-cell.is-done .gantt-fill { background: linear-gradient(90deg, #CBD5E1, var(--text-soft)); box-shadow: none; }
+.timer-cell.is-done .gantt-label { color: var(--text-soft); text-shadow: none; }
+.timer-cell.is-over .gantt-fill { background: linear-gradient(90deg, #CBD5E1, var(--text-soft)); box-shadow: none; }
+.timer-cell.is-over .gantt-label { color: var(--text-soft); text-shadow: none; }
+
+[data-theme="dark"] .gantt-label { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
 
 /* ===== 操作按钮 ===== */
 .ops { display: flex; gap: 6px; flex-wrap: wrap; }
