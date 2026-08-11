@@ -38,17 +38,8 @@
       </div>
     </header>
 
-    <!-- 顶部信息容器：当日信息 + 每日一言 -->
-    <section class="infobar" aria-label="今日信息与每日一言">
-      <!-- 当天公历/农历/节气/节日信息条（单行：公历 · 农历 · 节日/节气） -->
-      <div class="dayinfo" id="dayInfo">
-        <span class="di-seg di-solar" id="diSolar"></span>
-        <span class="di-sep"></span>
-        <span class="di-seg di-lunar" id="diLunar"></span>
-        <span class="di-sep"></span>
-        <span class="di-seg di-tags" id="diTags"></span>
-      </div>
-
+    <!-- 顶部信息容器：每日一言 -->
+    <section class="infobar" aria-label="每日一言">
       <!-- 每日一言 -->
       <div class="daily-quote" id="dailyQuote">
         <span class="dq-text" id="dqText"></span>
@@ -81,6 +72,19 @@
 
     <footer class="footer">数据保存在本地浏览器 · 刷新不丢失</footer>
   </div>
+
+  <!-- 独立小日历控件：今日信息（可拖动，位置持久化到本地） -->
+  <aside id="miniCalendar" class="mini-calendar" aria-label="今日信息">
+    <div class="mini-calendar__handle" title="拖动移动位置">
+      <span class="mini-calendar__title" id="mcHandleTitle">今日</span>
+    </div>
+    <div class="mini-calendar__body">
+      <div class="mc-year" id="mcYear"></div>
+      <div class="mc-date" id="mcDate"></div>
+      <div class="mc-lunar" id="mcLunar"></div>
+      <div class="mc-events" id="mcEvents"></div>
+    </div>
+  </aside>
 
   <!-- 添加 / 修改 弹窗 -->
   <div id="modal" class="modal" hidden>

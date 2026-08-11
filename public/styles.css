@@ -112,69 +112,9 @@ body {
 [data-theme="dark"] .btn-ghost { background: #334155; color: var(--text-soft); }
 [data-theme="dark"] .btn-ghost:hover { background: #475569; }
 
-/* ===== 顶部信息容器（当日信息 + 每日一言） ===== */
+/* ===== 顶部信息容器（每日一言） ===== */
 .infobar {
-  background: var(--surface);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
   margin-bottom: 8px;
-  overflow: hidden;
-}
-
-/* ===== 今日日期/农历/节气/节日信息条（单行） ===== */
-.dayinfo {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px 12px;
-  padding: 9px 22px;
-}
-.dayinfo::before {
-  content: "📅";
-  font-size: 15px;
-  line-height: 1;
-  margin-right: 2px;
-}
-.di-seg { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; line-height: 1.2; }
-.di-solar { font-weight: 600; letter-spacing: 0.3px; }
-.di-solar .di-week { color: var(--primary-strong); margin-left: 6px; font-weight: 500; }
-.di-lunar { color: var(--text-soft); }
-/* 区块间分隔竖线 */
-.di-sep { width: 1px; align-self: stretch; background: var(--border); margin: 2px 2px; }
-.di-tags { display: inline-flex; flex-wrap: wrap; gap: 8px; }
-.di-tag {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: 13px; font-weight: 500; line-height: 1;
-  padding: 6px 11px; border-radius: 999px;
-  border: 1px solid transparent; white-space: nowrap;
-}
-/* 节日标签 */
-.di-tag.t-festival {
-  background: rgba(239, 68, 68, 0.1);
-  color: var(--danger);
-  border-color: rgba(239, 68, 68, 0.22);
-}
-/* 节气标签 */
-.di-tag.t-jieqi {
-  background: rgba(16, 185, 129, 0.1);
-  color: var(--success);
-  border-color: rgba(16, 185, 129, 0.22);
-}
-/* 无节日/节气时占位提示 */
-.di-tag.t-none {
-  background: transparent;
-  color: var(--text-soft);
-  border-color: var(--border);
-}
-[data-theme="dark"] .di-tag.t-festival {
-  background: rgba(248, 113, 113, 0.14);
-  color: #FCA5A5;
-  border-color: rgba(248, 113, 113, 0.28);
-}
-[data-theme="dark"] .di-tag.t-jieqi {
-  background: rgba(52, 211, 153, 0.14);
-  color: #6EE7B7;
-  border-color: rgba(52, 211, 153, 0.28);
 }
 
 /* ===== 每日一言 ===== */
@@ -511,4 +451,70 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   .modal-card { padding: 20px; }
   .countdown-row { flex-direction: column; }
   .cd-value { flex: 1; }
+}
+
+/* ===== 独立小日历控件（今日信息 · 可拖动） ===== */
+.mini-calendar {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 50;
+  width: 220px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.16);
+  overflow: hidden;
+  user-select: none;
+  font-family: inherit;
+  backdrop-filter: blur(6px);
+}
+.mini-calendar.is-dragging { box-shadow: 0 18px 44px rgba(15, 23, 42, 0.28); cursor: grabbing; }
+
+.mini-calendar__handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 12px;
+  cursor: grab;
+  background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+  color: #fff;
+}
+.mini-calendar__handle:active { cursor: grabbing; }
+.mini-calendar__title { font-size: 0.85rem; font-weight: 600; letter-spacing: .03em; }
+
+.mini-calendar__body { padding: 12px 14px 14px; }
+.mc-year {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--primary-strong);
+  letter-spacing: .05em;
+}
+.mc-date {
+  font-size: 1.18rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-top: 2px;
+  line-height: 1.2;
+}
+.mc-lunar {
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  margin-top: 3px;
+}
+.mc-events {
+  margin: 10px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.mc-event {
+  font-size: 0.82rem;
+  line-height: 1.35;
+  padding: 2px 0;
+  color: var(--text);
+}
+.mc-event--none {
+  color: var(--text-soft);
+  font-style: italic;
 }

@@ -1073,6 +1073,8 @@ function startOfDay(date) {
 const WEEK_CN = ["星期日","星期一","星期二","星期三","星期四","星期五","星期六"];
 
 function renderDayInfo() {
+  // 顶部信息条已移除，今日信息统一由小日历控件展示，此处留空
+  return;
   if (typeof Solar === "undefined" || typeof Lunar === "undefined") return;
   const now = new Date();
   const y = now.getFullYear();
@@ -1154,6 +1156,185 @@ function findNextEvent(today) {
   if (candidates.length === 0) return null;
   candidates.sort((a, b) => a.date - b.date);
   return candidates[0];
+}
+
+/* ---------- 独立小日历控件（今日信息 + 拖拽 + 位置持久化） ---------- */
+const MC_POS_KEY = "mytime_mini_calendar_pos";
+
+// 生成今日及未来一段时间内的节日/节气事件列表
+function buildMiniCalendarEvents(today) {
+  const events = [];
+  const start = startOfDay(today);
+
+  // 1) 当天事件（多条）
+  const s0 = Solar.fromYmd(today.getFullYear(), today.getMonth() + 1, today.getDate());
+  const l0 = s0.getLunar();
+  s0.getFestivals().forEach(f => events.push({ type: "festival", text: f, days: 0 }));
+  s0.getOtherFestivals().forEach(f => events.push({ type: "festival", text: f, days: 0 }));
+  l0.getFestivals().forEach(f => events.push({ type: "festival", text: f, days: 0 }));
+  const jq0 = l0.getJieQi();
+  if (jq0) events.push({ type: "jieqi", text: jq0, days: 0 });
+
+  // 2) 未来事件：节气（库 API） + 枚举未来 366 天节日
+  const future = [];
+  try {
+    const jq = Lunar.fromSolar(Solar.fromDate(today)).getNextJieQi(true);
+    if (jq && jq.getSolar()) {
+      const js = jq.getSolar();
+      const dt = new Date(js.getYear(), js.getMonth() - 1, js.getDay());
+      const days = Math.round((dt - start) / 86400000);
+      if (days > 0) future.push({ type: "jieqi", text: jq.getName(), days });
+    }
+  } catch (e) { /* 忽略 */ }
+
+  for (let off = 1; off <= 366; off++) {
+    const dt = new Date(today.getFullYear(), today.getMonth(), today.getDate() + off);
+    const s = Solar.fromYmd(dt.getFullYear(), dt.getMonth() + 1, dt.getDate());
+    const l = s.getLunar();
+    const names = [];
+    s.getFestivals().forEach(f => names.push(f));
+    s.getOtherFestivals().forEach(f => names.push(f));
+    l.getFestivals().forEach(f => names.push(f));
+    names.forEach(f => future.push({ type: "festival", text: f, days: off }));
+  }
+
+  future.sort((a, b) => a.days - b.days);
+  // 取最近的若干个未来事件补足（去重，最多补到总量约 5 条）
+  const seen = new Set(events.map(e => e.type + "|" + e.text));
+  for (const e of future) {
+    const key = e.type + "|" + e.text;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    events.push(e);
+    if (events.length >= 5) break;
+  }
+  return events;
+}
+
+function renderMiniCalendar() {
+  const box = document.getElementById("miniCalendar");
+  if (!box) return;
+  if (typeof Solar === "undefined" || typeof Lunar === "undefined") return;
+
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth() + 1;
+  const d = now.getDate();
+  const solar = Solar.fromYmd(y, m, d);
+  const lunar = solar.getLunar();
+
+  const elYear = document.getElementById("mcYear");
+  const elDate = document.getElementById("mcDate");
+  const elLunar = document.getElementById("mcLunar");
+  const elEvents = document.getElementById("mcEvents");
+  const elHandleTitle = document.getElementById("mcHandleTitle");
+  if (!elYear || !elDate || !elLunar || !elEvents) return;
+
+  const week = WEEK_CN[now.getDay()];
+
+  if (elHandleTitle) {
+    elHandleTitle.textContent = "📅 今日信息";
+  }
+
+  elYear.textContent = `${y}年`;
+  elDate.textContent = `${m}月${d}日 ${week}`;
+  elLunar.textContent = `${lunar.getYearInGanZhi()}${lunar.getYearShengXiao()}年 · ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}`;
+
+  const events = buildMiniCalendarEvents(now);
+  elEvents.innerHTML = "";
+  if (events.length === 0) {
+    const div = document.createElement("div");
+    div.className = "mc-event mc-event--none";
+    div.textContent = "未来一年无节日 / 节气";
+    elEvents.appendChild(div);
+  } else {
+    events.forEach(e => {
+      const div = document.createElement("div");
+      div.className = "mc-event mc-event--" + e.type;
+      const icon = e.type === "jieqi" ? "🌿" : "🎉";
+      const tail = e.days === 0 ? "" : `（${e.days}天后）`;
+      div.textContent = `${icon} ${e.text}${tail}`;
+      elEvents.appendChild(div);
+    });
+  }
+}
+
+// 拖拽 + 位置持久化
+function initMiniCalendarDrag() {
+  const box = document.getElementById("miniCalendar");
+  if (!box) return;
+  const handle = box.querySelector(".mini-calendar__handle");
+  if (!handle) return;
+
+  // 恢复上次位置（默认左上角）
+  try {
+    const saved = JSON.parse(localStorage.getItem(MC_POS_KEY) || "null");
+    if (saved && typeof saved.x === "number" && typeof saved.y === "number") {
+      box.style.left = saved.x + "px";
+      box.style.top = saved.y + "px";
+      box.style.right = "auto";
+      box.dataset.dragged = "1";
+    }
+  } catch (e) { /* 忽略 */ }
+
+  let dragging = false;
+  let startX = 0, startY = 0, originX = 0, originY = 0;
+
+  const onDown = (e) => {
+    dragging = true;
+    box.classList.add("is-dragging");
+    const rect = box.getBoundingClientRect();
+    // 若尚未设置 left/top，则以当前位置为准
+    if (getComputedStyle(box).left === "auto") {
+      box.style.left = rect.left + "px";
+      box.style.top = rect.top + "px";
+      box.style.right = "auto";
+    }
+    originX = parseFloat(box.style.left) || 0;
+    originY = parseFloat(box.style.top) || 0;
+    const pt = e.touches ? e.touches[0] : e;
+    startX = pt.clientX;
+    startY = pt.clientY;
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+    document.addEventListener("touchmove", onMove, { passive: false });
+    document.addEventListener("touchend", onUp);
+    e.preventDefault();
+  };
+
+  const onMove = (e) => {
+    if (!dragging) return;
+    const pt = e.touches ? e.touches[0] : e;
+    let nx = originX + (pt.clientX - startX);
+    let ny = originY + (pt.clientY - startY);
+    // 限制在视口内
+    const maxX = window.innerWidth - box.offsetWidth;
+    const maxY = window.innerHeight - box.offsetHeight;
+    nx = Math.max(0, Math.min(nx, maxX));
+    ny = Math.max(0, Math.min(ny, maxY));
+    box.style.left = nx + "px";
+    box.style.top = ny + "px";
+    if (e.cancelable) e.preventDefault();
+  };
+
+  const onUp = () => {
+    if (!dragging) return;
+    dragging = false;
+    box.classList.remove("is-dragging");
+    document.removeEventListener("mousemove", onMove);
+    document.removeEventListener("mouseup", onUp);
+    document.removeEventListener("touchmove", onMove);
+    document.removeEventListener("touchend", onUp);
+    try {
+      localStorage.setItem(MC_POS_KEY, JSON.stringify({
+        x: parseFloat(box.style.left) || 0,
+        y: parseFloat(box.style.top) || 0
+      }));
+    } catch (e) { /* 忽略 */ }
+  };
+
+  handle.addEventListener("mousedown", onDown);
+  handle.addEventListener("touchstart", onDown, { passive: false });
 }
 
 /* ---------- 事件绑定 ---------- */
@@ -1361,16 +1542,17 @@ function renderDailyQuote() {
 
 /* ---------- 启动 ---------- */
 renderList();
-renderDayInfo();
 renderDailyQuote();
+renderMiniCalendar();
+initMiniCalendarDrag();
 setInterval(updateTimers, 1000);
 
-// 跨天自动刷新顶部日期/农历信息：每分钟检查一次日期是否变化
+// 跨天自动刷新小日历信息：每分钟检查一次日期是否变化
 let _dayInfoKey = new Date().toDateString();
 setInterval(() => {
   const k = new Date().toDateString();
   if (k !== _dayInfoKey) {
     _dayInfoKey = k;
-    renderDayInfo();
+    renderMiniCalendar();
   }
 }, 60 * 1000);
