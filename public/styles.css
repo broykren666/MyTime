@@ -548,6 +548,8 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   display: flex;
   flex-wrap: nowrap;
   gap: 6px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--divider, rgba(148, 163, 184, 0.25));
 }
 .mc-pill {
   display: inline-flex;

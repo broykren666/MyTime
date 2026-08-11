@@ -1318,8 +1318,12 @@ function renderMiniCalendar() {
 
   const week = WEEK_CN[now.getDay()];
 
+  mcTitleDate = { m, d, week };
+
   if (elHandleTitle) {
-    elHandleTitle.textContent = "今日信息";
+    const collapsed = document.getElementById("mcBody") &&
+      document.getElementById("mcBody").classList.contains("is-collapsed");
+    elHandleTitle.textContent = collapsed ? `${m}月${d}日 ${week.replace("星期", "周")}` : "今日信息";
   }
 
   elDateLine.textContent = `${y}年${m}月${d}日`;
@@ -1448,6 +1452,8 @@ function renderMiniCalendar() {
 const MC_ALL_KEY = "mytime_mc_all_collapsed";
 const MC_LUNAR_KEY = "mytime_mc_lunar_collapsed";
 let mcLunarOpen = false;
+// 折叠态标题所需的日期信息（由 renderMiniCalendar 填充）
+let mcTitleDate = { m: 0, d: 0, week: "" };
 
 function applyMcCollapse() {
   // 默认：今日信息展开、农历详情折叠（无存储，刷新后回到折叠）
@@ -1457,10 +1463,16 @@ function applyMcCollapse() {
   const allBtn = document.getElementById("mcToggleAll");
   const lunarBtn = document.getElementById("mcToggleLunar");
   const detail = document.getElementById("mcLunarDetail");
+  const title = document.getElementById("mcHandleTitle");
   if (body) body.classList.toggle("is-collapsed", all);
   if (allBtn) allBtn.textContent = all ? "+" : "−";
   if (detail) detail.classList.toggle("is-collapsed", lunar);
   if (lunarBtn) lunarBtn.textContent = lunar ? "+" : "−";
+  if (title) {
+    title.textContent = all
+      ? `${mcTitleDate.m}月${mcTitleDate.d}日 ${mcTitleDate.week.replace("星期", "周")}`
+      : "今日信息";
+  }
 }
 
 function initMcToggles() {
