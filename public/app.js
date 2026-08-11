@@ -745,10 +745,11 @@ function updateTimers() {
     const cell = timerCells.get(task.id);
     if (!cell) return;
     const { text, cls, progress } = computeTimer(task, now);
+    const textCls = textLevelCls(progress);
 
     // 兼容异常任务（progress 为 null）：回退纯文字显示，不渲染进度条
     if (progress === null || progress === undefined) {
-      cell.className = "timer-cell" + (cls ? " " + cls : "");
+      cell.className = "timer-cell" + (textCls ? " " + textCls : "");
       cell.textContent = text;
       return;
     }
@@ -757,8 +758,8 @@ function updateTimers() {
     const fill = cell.querySelector(".gantt-fill");
     const label = cell.querySelector(".gantt-label");
 
-    cell.className = "timer-cell has-gantt" + (cls ? " " + cls : "");
-    // 甘特图填充色按剩余比例分段上色（绿/蓝/黄/橙/红）
+    cell.className = "timer-cell has-gantt" + (textCls ? " " + textCls : "");
+    // 甘特图整条按剩余比例取单色（10 档），从右锚定、随剩余变窄
     fill.className = "gantt-fill" + (cls ? " " + cls : "");
     fill.style.width = (progress * 100).toFixed(2) + "%";
     label.textContent = text;
@@ -1022,11 +1023,27 @@ function onFixeddayInput() {
   if (newVal !== raw) els.fixeddayInput.value = newVal;
 }
 
-// 按剩余比例（progress，0~1）返回甘特图颜色分级：
-// 100%-80% 绿 / 80%-60% 蓝 / 60%-40% 黄 / 40%-20% 橙 / 20%-0% 红
+// 按剩余比例（progress，0~1）返回甘特图填充色档（整条单色，按长度分 10 档）：
+// 100-90 绿 / 90-80 绿蓝 / 80-70 蓝 / 70-60 蓝黄 / 60-50 黄 /
+// 50-40 黄橙 / 40-30 橙 / 30-20 橙红 / 20-10 红 / 10-0 红紫
 function progressLevelCls(progress) {
   const p = Math.max(0, Math.min(1, progress));
-  if (p > 0.8) return "";          // 绿（基础色，无需额外类）
+  if (p > 0.9) return "";            // 绿（基础色）
+  if (p > 0.8) return "is-green-blue";
+  if (p > 0.7) return "is-blue";
+  if (p > 0.6) return "is-blue-yellow";
+  if (p > 0.5) return "is-yellow";
+  if (p > 0.4) return "is-yellow-orange";
+  if (p > 0.3) return "is-orange";
+  if (p > 0.2) return "is-orange-red";
+  if (p > 0.1) return "is-red";
+  return "is-red-purple";            // 红紫
+}
+
+// 文本颜色档（5 档，与甘特图主色对应）
+function textLevelCls(progress) {
+  const p = Math.max(0, Math.min(1, progress));
+  if (p > 0.8) return "";
   if (p > 0.6) return "is-blue";
   if (p > 0.4) return "is-yellow";
   if (p > 0.2) return "is-orange";

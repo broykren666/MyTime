@@ -291,23 +291,25 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   align-items: center;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
 }
-/* 甘特图填充色：按剩余比例分段上色（绿→蓝→黄→橙→红） */
+/* 甘特图填充：整条按剩余比例取单色（10 档：绿→红紫），从右锚定、随剩余变窄 */
 .gantt-fill {
   position: absolute;
   right: 0; top: 0; bottom: 0;
   width: 0%;
   border-radius: 999px;
   background: #10B981;
-  transition: width .6s cubic-bezier(.22,.61,.36,1), background-color .4s ease;
-}
-.gantt-fill.is-blue   { background: #3B82F6; box-shadow: 0 0 8px rgba(59, 130, 246, 0.4); }
-.gantt-fill.is-yellow { background: #F59E0B; box-shadow: 0 0 8px rgba(245, 158, 11, 0.4); }
-.gantt-fill.is-orange { background: #EA580C; box-shadow: 0 0 8px rgba(234, 88, 12, 0.4); }
-.gantt-fill.is-red    { background: #EF4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.45); }
-/* 极满（>80%）保持绿色光晕 */
-.gantt-fill:not(.is-blue):not(.is-yellow):not(.is-orange):not(.is-red) {
   box-shadow: 0 0 8px rgba(16, 185, 129, 0.35);
+  transition: width .6s cubic-bezier(.22,.61,.36,1), background-color .4s ease, box-shadow .4s ease;
 }
+.gantt-fill.is-green-blue { background: #259BBB; box-shadow: 0 0 8px rgba(37, 155, 187, 0.4); }
+.gantt-fill.is-blue       { background: #3B82F6; box-shadow: 0 0 8px rgba(59, 130, 246, 0.4); }
+.gantt-fill.is-blue-yellow{ background: #989080; box-shadow: 0 0 8px rgba(152, 144, 128, 0.4); }
+.gantt-fill.is-yellow     { background: #F59E0B; box-shadow: 0 0 8px rgba(245, 158, 11, 0.4); }
+.gantt-fill.is-yellow-orange { background: #EF7B0B; box-shadow: 0 0 8px rgba(239, 123, 11, 0.4); }
+.gantt-fill.is-orange     { background: #EA580C; box-shadow: 0 0 8px rgba(234, 88, 12, 0.4); }
+.gantt-fill.is-orange-red { background: #ED4E28; box-shadow: 0 0 8px rgba(237, 78, 40, 0.42); }
+.gantt-fill.is-red        { background: #EF4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.45); }
+.gantt-fill.is-red-purple { background: #C0307A; box-shadow: 0 0 8px rgba(192, 48, 122, 0.45); }
 .gantt-label {
   position: relative;
   z-index: 1;
