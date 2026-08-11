@@ -392,6 +392,20 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 .calendar-seg { flex-shrink: 0; }
 .calendar-seg .seg-item { padding: 3px 10px; font-size: 0.78rem; }
 
+/* ===== 锚定（此刻/锚定）===== */
+.anchor-seg { margin-left: auto; }
+.anchor-seg .seg-item { padding: 5px 12px; font-size: 0.78rem; }
+.countdown-row .anchor-seg { margin-left: 6px; }
+.anchor-datetime { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.anchor-datetime-label { margin-bottom: 0; }
+.anchor-datetime-controls { display: flex; gap: 8px; }
+.anchor-date { flex: 1 1 auto; }
+.anchor-time { flex: 0 0 130px; }
+@media (max-width: 560px) {
+  .anchor-datetime-controls { flex-direction: column; }
+  .anchor-time { flex: 1; }
+}
+
 /* ===== 农历选择器 ===== */
 .lunar-picker {
   margin-top: -2px;

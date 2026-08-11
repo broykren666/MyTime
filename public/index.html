@@ -115,7 +115,13 @@
 
         <!-- 倒计时类型输入区 -->
         <div class="field type-panel" id="countdownField" hidden>
-          <span class="field-label">设置倒计时</span>
+          <div class="field-label-row">
+            <span class="field-label">设置倒计时</span>
+            <div class="seg calendar-seg anchor-seg" id="anchorSegCountdown">
+              <button type="button" class="seg-item is-active" data-anchor="now">此刻</button>
+              <button type="button" class="seg-item" data-anchor="anchored">锚定</button>
+            </div>
+          </div>
           <div class="countdown-row">
             <input type="number" id="cdValueInput" class="input cd-value" min="1" step="1" value="1" placeholder="数值" />
             <div class="seg seg-unit" id="unitSeg">
@@ -125,6 +131,13 @@
               <button type="button" class="seg-item" data-unit="day">天</button>
               <button type="button" class="seg-item" data-unit="hour">时</button>
               <button type="button" class="seg-item" data-unit="minute">分</button>
+            </div>
+          </div>
+          <div class="anchor-datetime" id="anchorDatetimeCountdown" hidden>
+            <span class="field-label anchor-datetime-label">起始时刻</span>
+            <div class="anchor-datetime-controls">
+              <input type="date" id="anchorDateCountdown" class="input anchor-date" />
+              <input type="time" id="anchorTimeCountdown" class="input anchor-time" step="1" />
             </div>
           </div>
         </div>
@@ -177,8 +190,21 @@
 
         <!-- Cron 类型输入区 -->
         <div class="field type-panel" id="cronField" hidden>
-          <span class="field-label">Cron 表达式（分 时 日 月 周）</span>
+          <div class="field-label-row">
+            <span class="field-label">Cron 表达式（分 时 日 月 周）</span>
+            <div class="seg calendar-seg anchor-seg" id="anchorSegCron">
+              <button type="button" class="seg-item is-active" data-anchor="now">此刻</button>
+              <button type="button" class="seg-item" data-anchor="anchored">锚定</button>
+            </div>
+          </div>
           <input type="text" id="cronInput" class="input cron-value" value="0 8 * * *" placeholder="例：0 8 * * *（每天早上8点）" />
+          <div class="anchor-datetime" id="anchorDatetimeCron" hidden>
+            <span class="field-label anchor-datetime-label">起始时刻</span>
+            <div class="anchor-datetime-controls">
+              <input type="date" id="anchorDateCron" class="input anchor-date" />
+              <input type="time" id="anchorTimeCron" class="input anchor-time" step="1" />
+            </div>
+          </div>
           <div id="cronInfo" class="cron-info" hidden></div>
         </div>
 
