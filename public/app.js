@@ -180,7 +180,7 @@ function renderList() {
     tdTime.textContent = formatTime(task);
 
     // 计时器（动态，缓存引用避免每秒 querySelector）
-    // 甘特图结构：.gantt-bar 轨道 > .gantt-fill 进度 + 叠放文字；底部 .gantt-target 目标日期
+    // 甘特图结构：.gantt-bar 轨道 > .gantt-fill 进度 + 叠放文字
     const tdTimer = document.createElement("td");
     tdTimer.className = "timer-cell";
     tdTimer.dataset.timer = task.id;
@@ -192,10 +192,8 @@ function renderList() {
     const label = document.createElement("span");
     label.className = "gantt-label";
     bar.append(fill, label);
-    const target = document.createElement("div");
-    target.className = "gantt-target";
 
-    tdTimer.append(bar, target);
+    tdTimer.append(bar);
     timerCells.set(task.id, tdTimer);
 
     // 操作（修改 / 删除）
@@ -746,7 +744,7 @@ function updateTimers() {
   tasks.forEach(task => {
     const cell = timerCells.get(task.id);
     if (!cell) return;
-    const { text, cls, progress, targetLabel } = computeTimer(task, now);
+    const { text, cls, progress } = computeTimer(task, now);
 
     // 兼容异常任务（progress 为 null）：回退纯文字显示，不渲染进度条
     if (progress === null || progress === undefined) {
@@ -758,12 +756,10 @@ function updateTimers() {
     const bar = cell.querySelector(".gantt-bar");
     const fill = cell.querySelector(".gantt-fill");
     const label = cell.querySelector(".gantt-label");
-    const target = cell.querySelector(".gantt-target");
 
     cell.className = "timer-cell has-gantt" + (cls ? " " + cls : "");
     fill.style.width = (progress * 100).toFixed(2) + "%";
     label.textContent = text;
-    target.textContent = targetLabel || "";
 
     // 倒计时结束：发送一次浏览器通知
     if (task.type === "countdown" && cls === "is-done" && !notifiedIds.has(task.id)) {
