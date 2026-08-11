@@ -25,27 +25,34 @@ function normalizeType(t) {
 }
 
 /* ---------- 数据层 ---------- */
+let tasksDirty = false; // loadTasks 中是否执行了数据迁移
+
 function loadTasks() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const data = JSON.parse(raw);
     if (!Array.isArray(data)) return [];
-    return data
-      .filter(t => t && typeof t.id === "string")
-      .map(t => {
-        const task = { ...t, type: normalizeType(t.type) };
-        // 迁移：固定日旧数据可能用逗号分隔，统一规范化为斜杠分隔
-        if (task.type === "fixedday" && typeof task.fixeddayValue === "string") {
-          const arr = parseFixeddays(task.fixeddayValue);
-          task.fixeddayValue = arr.length ? arr.join("/") : "1";
-        }
-        // 迁移：倒计时任务缺少 createdAt 则补上当前时间，避免每次刷新重置倒计时
-        if (task.type === "countdown" && !task.createdAt) {
-          task.createdAt = Date.now();
-        }
-        return task;
-      });
+    const rawTasks = data.filter(t => t && typeof t.id === "string");
+    let dirty = false;
+    const migrated = rawTasks.map(t => {
+      const task = { ...t, type: normalizeType(t.type) };
+      // 迁移：固定日旧数据可能用逗号分隔，统一规范化为斜杠分隔
+      if (task.type === "fixedday" && typeof task.fixeddayValue === "string") {
+        const arr = parseFixeddays(task.fixeddayValue);
+        const normalized = arr.length ? arr.join("/") : "1";
+        if (normalized !== task.fixeddayValue) dirty = true;
+        task.fixeddayValue = normalized;
+      }
+      // 迁移：倒计时任务缺少 createdAt 则补上当前时间，避免每次刷新重置倒计时
+      if (task.type === "countdown" && !task.createdAt) {
+        task.createdAt = Date.now();
+        dirty = true;
+      }
+      return task;
+    });
+    tasksDirty = tasksDirty || dirty;
+    return migrated;
   } catch (e) {
     console.warn("读取本地数据失败，已重置为空列表", e);
     return [];
@@ -61,8 +68,8 @@ function saveTasks() {
 }
 
 let tasks = loadTasks();
-// 加载后若有旧数据被规范化（如固定日逗号→斜杠），写回存储保持一致
-if (tasks.some(t => t.type === "fixedday")) saveTasks();
+// 加载后若数据被迁移规范化，写回存储以持久化迁移结果
+if (tasksDirty) saveTasks();
 let editingId = null; // null = 添加模式
 const notifiedIds = new Set(); // 已发送过结束通知的倒计时任务 id，避免每秒重复提醒
 const cronCache = new Map(); // 缓存 Croner 实例，key 为 cron 表达式
@@ -122,12 +129,17 @@ const els = {
   anchorDatetimeCron: document.getElementById("anchorDatetimeCron"),
   anchorDateCron: document.getElementById("anchorDateCron"),
   anchorTimeCron: document.getElementById("anchorTimeCron"),
-  diSolar: document.getElementById("diSolar"),
-  diLunar: document.getElementById("diLunar"),
-  diTags: document.getElementById("diTags"),
   dailyQuote: document.getElementById("dailyQuote"),
   dqText: document.getElementById("dqText"),
   dqFrom: document.getElementById("dqFrom"),
+};
+
+/* 分段器 seg-item 缓存，避免 sync*UI 中重复 querySelectorAll */
+const segItems = {
+  typeItems: els.typeSeg.querySelectorAll(".seg-item"),
+  unitItems: els.unitSeg.querySelectorAll(".seg-item"),
+  anchorCdnItems: els.anchorSegCountdown.querySelectorAll(".seg-item"),
+  anchorCronItems: els.anchorSegCron.querySelectorAll(".seg-item"),
 };
 
 /* 当前表单选择的类型 / 单位（临时状态） */
@@ -156,10 +168,17 @@ function anchorTimestamp(dateStr, timeStr) {
   return Number.isNaN(ts) ? null : ts;
 }
 
-function unitMs(unit) {
+function unitMs(unit, from) {
+  const ref = from ? new Date(from) : new Date();
   switch (unit) {
-    case "year": return 365 * 24 * 3600 * 1000;
-    case "month": return 30 * 24 * 3600 * 1000;
+    case "year": {
+      const nextYear = new Date(ref.getFullYear() + 1, ref.getMonth(), ref.getDate());
+      return nextYear.getTime() - ref.getTime();
+    }
+    case "month": {
+      const nextMonth = new Date(ref.getFullYear(), ref.getMonth() + 1, ref.getDate());
+      return nextMonth.getTime() - ref.getTime();
+    }
     case "week": return 7 * 24 * 3600 * 1000;
     case "day": return 24 * 3600 * 1000;
     case "hour": return 3600 * 1000;
@@ -674,7 +693,7 @@ function doImport() {
 
 function syncTypeUI() {
   const locked = editingId !== null; // 修改模式锁定任务类型
-  els.typeSeg.querySelectorAll(".seg-item").forEach(b => {
+  segItems.typeItems.forEach(b => {
     b.classList.toggle("is-active", b.dataset.type === formType);
     b.disabled = locked;
   });
@@ -692,7 +711,7 @@ function syncTypeUI() {
   show("cron");
   // 禁用隐藏区字段，避免浏览器校验到隐藏的必填框
   els.cdValue.disabled = formType !== "countdown";
-  els.unitSeg.querySelectorAll(".seg-item").forEach(b => (b.disabled = formType !== "countdown"));
+  segItems.unitItems.forEach(b => (b.disabled = formType !== "countdown"));
   els.birthdayInput.disabled = formType !== "birthday";
   els.memorialInput.disabled = formType !== "memorial";
   els.fixeddayInput.disabled = formType !== "fixedday";
@@ -705,19 +724,19 @@ function syncTypeUI() {
 }
 
 function syncUnitUI() {
-  els.unitSeg.querySelectorAll(".seg-item").forEach(b =>
+  segItems.unitItems.forEach(b =>
     b.classList.toggle("is-active", b.dataset.unit === formUnit)
   );
 }
 
 /* 同步锚定分段器高亮，并按类型显隐对应的起始时刻框 */
 function syncAnchorUI() {
-  const segMap = { countdown: els.anchorSegCountdown, cron: els.anchorSegCron };
+  const segMap = { countdown: segItems.anchorCdnItems, cron: segItems.anchorCronItems };
   const boxMap = { countdown: els.anchorDatetimeCountdown, cron: els.anchorDatetimeCron };
   ["countdown", "cron"].forEach(type => {
-    const seg = segMap[type];
+    const items = segMap[type];
     const mode = type === "countdown" ? formAnchorModeCountdown : formAnchorModeCron;
-    seg.querySelectorAll(".seg-item").forEach(b =>
+    items.forEach(b =>
       b.classList.toggle("is-active", b.dataset.anchor === mode)
     );
     const box = boxMap[type];
@@ -879,8 +898,8 @@ function computeTimer(task, now) {
   if (task.type === "countdown") {
     // 有锚定时以 anchor 为起点，否则以 createdAt（保存时刻=此刻）为起点
     const start = task.anchor || task.createdAt || now;
-    const end = start + task.cdValue * unitMs(task.cdUnit);
-    const total = task.cdValue * unitMs(task.cdUnit) || 1;
+    const end = start + task.cdValue * unitMs(task.cdUnit, start);
+    const total = task.cdValue * unitMs(task.cdUnit, start) || 1;
     const remain = end - now;
     if (remain <= 0) return { text: "已结束", cls: "is-done", progress: 0, targetLabel: fmtDate(end) };
 
@@ -914,7 +933,7 @@ function computeTimer(task, now) {
     }
     // 公历纪念日
     const born = new Date((task.birthdayValue || todayStr()) + "T00:00:00");
-    const years = (now - born.getTime()) / unitMs("year");
+    const years = (now - born.getTime()) / unitMs("year", now);
     const yLabel = years >= 1 ? `${Math.floor(years)}年 | ` : "";
     const next = nextBirthday(born, now);
     const nextTs = next.nextTs;
@@ -1008,7 +1027,7 @@ function computeTimer(task, now) {
     if (diff >= 0) {
       if (days === 0) return { text: "今天到期", cls: "is-red", progress: 0, targetLabel: fmtDate(target) };
       // 以「一年前到目标日」为一个周期估算进度
-      const from = target - unitMs("year");
+      const from = target - unitMs("year", target);
       const progress = 1 - progressBetween(from, target, now);
       return { text: fmtCountdown(target - now), cls: progressLevelCls(progress), progress, targetLabel: fmtDate(target) };
     }
@@ -1159,97 +1178,17 @@ function startOfDay(date) {
 /* ---------- 今日公历/农历/节气/节日 ---------- */
 const WEEK_CN = ["星期日","星期一","星期二","星期三","星期四","星期五","星期六"];
 
-function renderDayInfo() {
-  // 顶部信息条已移除，今日信息统一由小日历控件展示，此处留空
-  return;
-  if (typeof Solar === "undefined" || typeof Lunar === "undefined") return;
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = now.getMonth() + 1; // Solar.fromYmd 月份为 1-based
-  const d = now.getDate();
-
-  const solar = Solar.fromYmd(y, m, d);
-  const lunar = solar.getLunar();
-
-  // 公历 + 星期
-  const week = WEEK_CN[now.getDay()];
-  const diSolar = els.diSolar;
-  const diLunar = els.diLunar;
-  if (diSolar) diSolar.innerHTML = `${y}年${m}月${d}日<span class="di-week">${week}</span>`;
-
-  // 农历（getMonthInChinese 已自动处理闰月前缀"闰"）
-  const lunarText = "农历 " + lunar.getMonthInChinese() + "月" + lunar.getDayInChinese();
-  const animals = lunar.getYearShengXiao();
-  const ganzhi = lunar.getYearInGanZhi();
-  if (diLunar) diLunar.textContent = `${lunarText} · ${ganzhi}年（${animals}）`;
-
-  // 节日 + 节气
-  const tags = [];
-  // 传统节日（如 春节、中秋、端午、除夕）
-  solar.getFestivals().forEach(f => tags.push({ type: "festival", text: f }));
-  // 现代/其他节日（如 元旦、劳动节、情人节、国庆节、母亲节等）
-  solar.getOtherFestivals().forEach(f => tags.push({ type: "festival", text: f }));
-  lunar.getFestivals().forEach(f => tags.push({ type: "festival", text: f }));
-  // 24 节气（当天无节气时返回空串）
-  const jq = lunar.getJieQi();
-  if (jq) tags.push({ type: "jieqi", text: jq });
-
-  const diTags = els.diTags;
-  if (!diTags) return;
-
-  // 当天有节日/节气 -> 直接展示
-  if (tags.length > 0) {
-    diTags.innerHTML = tags.map(t =>
-      `<span class="di-tag t-${t.type}">${t.type === "jieqi" ? "🌿 " : "🎉 "}${t.text}</span>`
-    ).join("");
-    return;
-  }
-
-  // 当天无节日/节气 -> 查找下一个（节气用库 API，节日枚举未来 366 天）
-  const next = findNextEvent(now);
-  if (next) {
-    const days = Math.round((next.date - startOfDay(now)) / 86400000);
-    const label = days <= 0 ? "今天" : days + "天后";
-    diTags.innerHTML = `<span class="di-tag t-${next.type}">${next.type === "jieqi" ? "🌿 " : "🎉 "}${next.text}（${label}）</span>`;
-    return;
-  }
-  diTags.innerHTML = '<span class="di-tag t-none">未来一年无节日 / 节气</span>';
-}
-
-/* 查找从 today 起最近的一个节日或节气（含节日与 24 节气），返回 {type,text,date} */
-function findNextEvent(today) {
-  const candidates = [];
-  // 1) 节气：使用 lunar.js 的 getNextJieQi（返回下一个节气）
-  try {
-    const jq = Lunar.fromSolar(Solar.fromDate(today)).getNextJieQi(true);
-    if (jq && jq.getSolar()) {
-      const js = jq.getSolar();
-      candidates.push({ type: "jieqi", text: jq.getName(), date: new Date(js.getYear(), js.getMonth() - 1, js.getDay()) });
-    }
-  } catch (e) { /* 忽略 */ }
-
-  // 2) 节日：枚举未来 366 天，收集公历/农历节日
-  for (let off = 1; off <= 366; off++) {
-    const dt = new Date(today.getFullYear(), today.getMonth(), today.getDate() + off);
-    const s = Solar.fromYmd(dt.getFullYear(), dt.getMonth() + 1, dt.getDate());
-    const l = s.getLunar();
-    const names = [];
-    s.getFestivals().forEach(f => names.push(f));
-    s.getOtherFestivals().forEach(f => names.push(f));
-    l.getFestivals().forEach(f => names.push(f));
-    names.forEach(f => candidates.push({ type: "festival", text: f, date: dt }));
-  }
-
-  if (candidates.length === 0) return null;
-  candidates.sort((a, b) => a.date - b.date);
-  return candidates[0];
-}
-
 /* ---------- 独立小日历控件（今日信息 + 拖拽 + 位置持久化） ---------- */
 const MC_POS_KEY = "mytime_mini_calendar_pos";
 
+// 按天缓存 buildMiniCalendarEvents 结果，避免重复创建 Solar/Lunar 对象
+const mcEventsCache = { dateKey: "", events: null };
+
 // 生成今日及未来一段时间内的节日/节气事件列表
 function buildMiniCalendarEvents(today) {
+  const key = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+  if (mcEventsCache.dateKey === key && mcEventsCache.events) return mcEventsCache.events;
+
   const events = [];
   const start = startOfDay(today);
 
@@ -1295,6 +1234,8 @@ function buildMiniCalendarEvents(today) {
     events.push(e);
     if (events.length >= 5) break;
   }
+  mcEventsCache.dateKey = key;
+  mcEventsCache.events = events;
   return events;
 }
 
@@ -1404,7 +1345,7 @@ function initMiniCalendarDrag() {
     if (e.cancelable) e.preventDefault();
   };
 
-  const onUp = () => {
+  const cleanupDrag = () => {
     if (!dragging) return;
     dragging = false;
     box.classList.remove("is-dragging");
@@ -1412,6 +1353,10 @@ function initMiniCalendarDrag() {
     document.removeEventListener("mouseup", onUp);
     document.removeEventListener("touchmove", onMove);
     document.removeEventListener("touchend", onUp);
+  };
+
+  const onUp = () => {
+    cleanupDrag();
     try {
       localStorage.setItem(MC_POS_KEY, JSON.stringify({
         x: parseFloat(box.style.left) || 0,
@@ -1419,6 +1364,11 @@ function initMiniCalendarDrag() {
       }));
     } catch (e) { /* 忽略 */ }
   };
+
+  // 极端情况：标签页隐藏时强制清理拖拽态，防止事件监听器残留
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) cleanupDrag();
+  });
 
   handle.addEventListener("mousedown", onDown);
   handle.addEventListener("touchstart", onDown, { passive: false });
@@ -1591,23 +1541,23 @@ function setQuote(text, from) {
 
 function renderDailyQuote() {
   const CACHE_KEY = "mytime_daily_quote";
-  const THROTTLE_MS = 60 * 1000; // 1 分钟内不重复请求 API，避免刷新限流
+  const THROTTLE_MS = 5 * 60 * 1000; // 5 分钟内不重复请求 API
 
-  // 读取本地缓存（含上次获取时间）
+  // 读取本地缓存（含获取时间戳）
   let cached = null;
   try {
     const raw = localStorage.getItem(CACHE_KEY);
     if (raw) cached = JSON.parse(raw);
   } catch (e) { cached = null; }
 
-  // 命中缓存且未超过 1 分钟 -> 直接展示缓存，不请求 API
+  // 命中缓存且未超 5 分钟 -> 直接展示，不请求 API
   if (cached && cached.text && Date.now() - (cached.ts || 0) < THROTTLE_MS) {
     setQuote(cached.text, cached.from);
     return;
   }
 
   // 真正优先 hitokoto：先清空（淡出），成功才显示 API 内容并写入缓存；
-  // 仅 fetch 失败 / 限流 / 超时(2.5s)才回退内置兜底（兜底不写缓存，便于 1 分钟后重试 API）。
+  // 仅 fetch 失败 / 限流 / 超时(2.5s)才回退内置兜底（兜底不写缓存，5 分钟后可重试 API）。
   const box = els.dailyQuote;
   if (box) { box.classList.remove("show"); box.classList.add("fade"); }
   // 请求期间显示占位文本
