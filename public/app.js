@@ -785,14 +785,14 @@ function computeTimer(task, now) {
       if (!nextTs) return { text: "日期不合法", cls: "is-over" };
       const diffDays = Math.round((nextTs - startOfDay(now)) / (24 * 3600 * 1000));
       const refYear = getReferenceYear(task);
-      const yLabel = refYear ? `（${nowDate.getFullYear() - refYear}年）` : "";
+      const yLabel = refYear ? `${nowDate.getFullYear() - refYear}年 | ` : "";
       if (diffDays === 0) return { text: `${yLabel}🎉纪念日快乐`, cls: "is-red" };
       return { text: `${yLabel}距纪念日 ${diffDays}天`, cls: dayLevelCls(diffDays) };
     }
     // 公历纪念日
     const born = new Date((task.birthdayValue || todayStr()) + "T00:00:00");
     const years = (now - born.getTime()) / unitMs("year");
-    const yLabel = years >= 1 ? `（${Math.floor(years)}年）` : "";
+    const yLabel = years >= 1 ? `${Math.floor(years)}年 | ` : "";
     const next = nextBirthday(born, now);
     if (next.diff === 0) return { text: `${yLabel}🎉纪念日快乐`, cls: "is-red" };
     return { text: `${yLabel}距纪念日 ${next.diff}天`, cls: dayLevelCls(next.diff) };
