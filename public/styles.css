@@ -57,7 +57,7 @@ body {
 .app {
   max-width: 1024px;
   margin: 0 auto;
-  padding: 32px 20px 52px;
+  padding: 20px 20px 36px;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -68,7 +68,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 22px;
+  margin-bottom: 16px;
 }
 .brand { display: flex; align-items: center; gap: 12px; }
 .brand-dot {
@@ -76,14 +76,14 @@ body {
   background: linear-gradient(135deg, var(--primary), var(--primary-deep));
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.18);
 }
-.topbar h1 { font-size: 24px; font-weight: 600; letter-spacing: 0.2px; }
+.topbar h1 { font-size: 20px; font-weight: 600; letter-spacing: 0.2px; }
 .top-actions { display: flex; align-items: center; gap: 10px; }
 
 /* ===== 按钮 ===== */
 .btn {
   border: none; cursor: pointer; font-family: inherit;
   font-size: 14px; font-weight: 500; border-radius: var(--radius-sm);
-  padding: 10px 18px; transition: transform .15s ease, box-shadow .2s ease, background .2s ease;
+  padding: 7px 16px; transition: transform .15s ease, box-shadow .2s ease, background .2s ease;
 }
 .btn-primary {
   background: linear-gradient(135deg, var(--primary), var(--primary-strong));
@@ -117,7 +117,7 @@ body {
   background: var(--surface);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  margin-bottom: 18px;
+  margin-bottom: 8px;
   overflow: hidden;
 }
 
@@ -126,8 +126,8 @@ body {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px 12px;
-  padding: 14px 22px;
+  gap: 8px 12px;
+  padding: 9px 22px;
 }
 .di-seg { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; line-height: 1.2; }
 .di-solar { font-weight: 600; letter-spacing: 0.3px; }
@@ -225,7 +225,7 @@ body {
   position: sticky; top: 0; z-index: 2;
   text-align: left; font-size: 13px; font-weight: 600;
   color: var(--text-soft); background: #F8FAFC;
-  padding: 14px 16px; border-bottom: 1px solid var(--border);
+  padding: 9px 16px; border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 .task-table tbody td {
