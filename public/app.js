@@ -6,6 +6,16 @@ const UNIT_LABEL = { year: "年", month: "月", week: "周", day: "天", hour: "
 // 兼容旧数据：曾经用 "date" 表示固定日期，统一映射为 memorial（纪念）
 const TYPE_ALIAS = { date: "memorial" };
 
+// 安全解析 JSON，失败时返回 fallback
+function safeParse(raw, fallback) {
+  try { const v = JSON.parse(raw); return v == null ? fallback : v; } catch (_) { return fallback; }
+}
+
+// 今天日期键 YYYY-M-D（与节假日缓存、渲染使用同一格式）
+function todayKey(now = new Date()) {
+  return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+}
+
 /* 农历显示名称 */
 const LUNAR_MONTH_NAMES = ['', '正月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','腊月'];
 const LUNAR_DAY_NAMES = ['','初一','初二','初三','初四','初五','初六','初七','初八','初九','初十',
@@ -1178,6 +1188,37 @@ function startOfDay(date) {
 /* ---------- 今日公历/农历/节气/节日 ---------- */
 const WEEK_CN = ["星期日","星期一","星期二","星期三","星期四","星期五","星期六"];
 
+/* ---------- 节假日状态（数据来自 vendor/holidays.js，方便手动维护） ---------- */
+// 数据由 window.HOLIDAY_DATA 提供（含当年 days 表）。
+// type: 2 法定假日 / 3 调休补班（上班）/ 其余按周末(1)或工作日(0)判断。
+// 键格式与 todayKey() 一致：YYYY-M-D（非补零）。
+
+// 同步获取某天节假日信息（本地数据，永不「加载中」）
+// 命中内置表 → 返回 type/name；否则按周末/工作日判断（type 1 / 0）
+function getHolidayInfo(dateKey) {
+  const days = (window.HOLIDAY_DATA && window.HOLIDAY_DATA.days) || {};
+  const hit = days[dateKey];
+  if (hit) return { type: hit.type, name: hit.name, date: dateKey, fromStatic: true };
+  const [y, m, d] = dateKey.split("-").map(Number);
+  const day = new Date(y, m - 1, d).getDay();
+  return { type: (day === 0 || day === 6) ? 1 : 0, name: "", date: dateKey, fromStatic: true };
+}
+
+// 兼容旧调用：直接同步返回，必要时刷新小日历
+function ensureTodayHoliday(dateKey) {
+  renderMiniCalendar();
+}
+
+// 节假日状态 → 展示样式映射（type: 0 工作日 / 1 周末 / 2 节日 / 3 调休）
+function holidayStatusMeta(info) {
+  switch (info.type) {
+    case 2: return { cls: "mc-holiday--festival", label: info.name ? `节日 · ${info.name}` : "节日" };
+    case 3: return { cls: "mc-holiday--overtime", label: info.name ? `调休 · ${info.name.replace("调休","")}` : "调休上班" };
+    case 1: return { cls: "mc-holiday--weekend",  label: "周末" };
+    default: return { cls: "mc-holiday--workday",  label: "工作日" };
+  }
+}
+
 /* ---------- 独立小日历控件（今日信息 + 拖拽 + 位置持久化） ---------- */
 const MC_POS_KEY = "mytime_mini_calendar_pos";
 
@@ -1255,6 +1296,7 @@ function renderMiniCalendar() {
   const elDate = document.getElementById("mcDate");
   const elLunar = document.getElementById("mcLunar");
   const elEvents = document.getElementById("mcEvents");
+  const elHoliday = document.getElementById("mcHoliday");
   const elHandleTitle = document.getElementById("mcHandleTitle");
   if (!elYear || !elDate || !elLunar || !elEvents) return;
 
@@ -1284,6 +1326,15 @@ function renderMiniCalendar() {
       div.textContent = `${icon} ${e.text}${tail}`;
       elEvents.appendChild(div);
     });
+  }
+
+  // 节假日状态徽标（本地数据，同步渲染，不会卡在「加载中」）
+  if (elHoliday) {
+    const dateKey = `${y}-${m}-${d}`;
+    const info = getHolidayInfo(dateKey);
+    const meta = holidayStatusMeta(info);
+    elHoliday.className = "mc-holiday " + meta.cls;
+    elHoliday.innerHTML = `<span class="mc-holiday__dot"></span>${meta.label}`;
   }
 }
 
@@ -1595,6 +1646,8 @@ function renderDailyQuote() {
 renderList();
 renderDailyQuote();
 renderMiniCalendar();
+// 每天首次打开时获取当天节假日信息（缓存命中则不会发请求）
+ensureTodayHoliday(todayKey());
 initMiniCalendarDrag();
 setInterval(updateTimers, 1000);
 
@@ -1605,5 +1658,6 @@ setInterval(() => {
   if (k !== _dayInfoKey) {
     _dayInfoKey = k;
     renderMiniCalendar();
+    ensureTodayHoliday(todayKey()); // 跨天后获取新一天的节假日状态
   }
 }, 60 * 1000);

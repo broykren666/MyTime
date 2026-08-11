@@ -545,3 +545,29 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   color: var(--text-soft);
   font-style: italic;
 }
+/* 节假日状态徽标 */
+.mc-holiday {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: .02em;
+  border: 1px solid transparent;
+}
+.mc-holiday__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+.mc-holiday--festival { color: #b42318; background: rgba(220, 38, 38, 0.10); border-color: rgba(220, 38, 38, 0.20); }
+.mc-holiday--weekend  { color: #7a5b00; background: rgba(217, 119, 6, 0.10);  border-color: rgba(217, 119, 6, 0.20); }
+.mc-holiday--overtime { color: #1d4ed8; background: rgba(37, 99, 235, 0.10); border-color: rgba(37, 99, 235, 0.20); }
+.mc-holiday--workday  { color: #475569; background: rgba(71, 85, 105, 0.08);  border-color: rgba(71, 85, 105, 0.16); }
+.mc-holiday--loading  { color: var(--text-soft); background: rgba(100, 116, 139, 0.08); border-color: rgba(100, 116, 139, 0.16); font-weight: 500; }
