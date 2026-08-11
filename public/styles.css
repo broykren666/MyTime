@@ -56,7 +56,10 @@ body {
 .app {
   max-width: 1024px;
   margin: 0 auto;
-  padding: 32px 20px 40px;
+  padding: 32px 20px 52px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ===== 顶部标题栏 ===== */
@@ -196,15 +199,29 @@ body {
   box-shadow: var(--shadow);
   overflow: hidden;
 }
+/* 任务列表卡片：占满剩余屏幕高度 */
+.card.task-card {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
 
 /* ===== 表格 ===== */
 .table-wrap { width: 100%; overflow-x: auto; }
+/* 任务列表容器：内部垂直滚动 */
+.card.task-card .table-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
 /* 首屏 preload：JS 渲染出列表前先隐藏，避免「空表格闪一下」；渲染后淡入 */
 .table-wrap.preload { visibility: hidden; }
 .table-wrap.revealed { animation: tableFadeIn .18s ease-out; }
 @keyframes tableFadeIn { from { opacity: 0; } to { opacity: 1; } }
 .task-table { width: 100%; border-collapse: collapse; min-width: 720px; }
 .task-table thead th {
+  position: sticky; top: 0; z-index: 2;
   text-align: left; font-size: 13px; font-weight: 600;
   color: var(--text-soft); background: #F8FAFC;
   padding: 14px 16px; border-bottom: 1px solid var(--border);
@@ -266,7 +283,15 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 .empty-icon { font-size: 40px; margin-bottom: 12px; }
 
 /* ===== 页脚 ===== */
-.footer { text-align: center; color: var(--text-soft); font-size: 13px; margin-top: 20px; }
+.footer {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  text-align: center; color: var(--text-soft); font-size: 13px;
+  padding: 10px 0;
+  background: linear-gradient(to top, var(--bg) 70%, transparent);
+  pointer-events: none;
+  z-index: 20;
+}
 
 /* ===== 弹窗 ===== */
 .modal { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 20px; }
