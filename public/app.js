@@ -940,11 +940,11 @@ function fmtCountdown(remain) {
   const m = Math.floor(r / unitMs("minute")); r -= m * unitMs("minute");
   const s = Math.floor(r / 1000);
   const parts = [];
-  if (y > 0) parts.push(`${y}Y`);
-  if (d > 0 || y > 0) parts.push(`${d}D`);
-  if (h > 0 || d > 0 || y > 0) parts.push(`${h}H`);
-  if (m > 0 || h > 0 || d > 0 || y > 0) parts.push(`${m}M`);
-  parts.push(`${s}S`);
+  if (y > 0) parts.push(`${y}y`);
+  if (d > 0 || y > 0) parts.push(`${d}d`);
+  if (h > 0 || d > 0 || y > 0) parts.push(`${h}h`);
+  if (m > 0 || h > 0 || d > 0 || y > 0) parts.push(`${m}m`);
+  parts.push(`${s}s`);
   return parts.join(" ");
 }
 
