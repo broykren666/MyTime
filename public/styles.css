@@ -129,6 +129,12 @@ body {
   gap: 8px 12px;
   padding: 9px 22px;
 }
+.dayinfo::before {
+  content: "📅";
+  font-size: 15px;
+  line-height: 1;
+  margin-right: 2px;
+}
 .di-seg { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; line-height: 1.2; }
 .di-solar { font-weight: 600; letter-spacing: 0.3px; }
 .di-solar .di-week { color: var(--primary-strong); margin-left: 6px; font-weight: 500; }
@@ -178,6 +184,11 @@ body {
   gap: 8px;
   padding: 8px 22px 10px;
   border-top: 1px solid var(--border);
+}
+.daily-quote::before {
+  content: "🗨️";
+  font-size: 14px;
+  line-height: 1.4;
 }
 .daily-quote .dq-text {
   font-size: 14px; font-style: italic;
