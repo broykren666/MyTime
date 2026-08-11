@@ -1246,7 +1246,7 @@ function buildMiniCalendarEvents(today) {
   const l0 = s0.getLunar();
   s0.getFestivals().forEach(f => events.push({ type: "festival", text: f, days: 0 }));
   s0.getOtherFestivals().forEach(f => events.push({ type: "festival", text: f, days: 0 }));
-  l0.getFestivals().forEach(f => events.push({ type: "festival", text: f, days: 0 }));
+  l0.getFestivals().forEach(f => events.push({ type: "lunar", text: f, days: 0 }));
   const jq0 = l0.getJieQi();
   if (jq0) events.push({ type: "jieqi", text: jq0, days: 0 });
 
@@ -1267,10 +1267,10 @@ function buildMiniCalendarEvents(today) {
     const s = Solar.fromYmd(dt.getFullYear(), dt.getMonth() + 1, dt.getDate());
     const l = s.getLunar();
     const names = [];
-    s.getFestivals().forEach(f => names.push(f));
-    s.getOtherFestivals().forEach(f => names.push(f));
-    l.getFestivals().forEach(f => names.push(f));
-    names.forEach(f => future.push({ type: "festival", text: f, days: off }));
+    s.getFestivals().forEach(f => names.push({ t: "festival", f }));
+    s.getOtherFestivals().forEach(f => names.push({ t: "festival", f }));
+    l.getFestivals().forEach(f => names.push({ t: "lunar", f }));
+    names.forEach(({ t, f }) => future.push({ type: t, text: f, days: off }));
   }
 
   future.sort((a, b) => a.days - b.days);
@@ -1421,9 +1421,12 @@ function renderMiniCalendar() {
     events.forEach(e => {
       const div = document.createElement("div");
       div.className = "mc-event mc-event--" + e.type;
-      const icon = e.type === "jieqi" ? "🌿" : "🎉";
-      const tail = e.days === 0 ? "" : `（${e.days}天后）`;
-      div.textContent = `${icon} ${e.text}${tail}`;
+      const icon = e.type === "jieqi" ? "🌿" : e.type === "lunar" ? "🌸" : "🎉";
+      div.appendChild(document.createTextNode(`${icon} ${e.text} | `));
+      const tail = document.createElement("span");
+      tail.className = "mc-event__tail" + (e.days === 0 ? " mc-event__tail--today" : "");
+      tail.textContent = e.days === 0 ? "今天" : `${e.days}天后`;
+      div.appendChild(tail);
       eventsRoot.appendChild(div);
     });
   }
@@ -1438,14 +1441,15 @@ function renderMiniCalendar() {
   }
 }
 
-// 今日信息 / 农历详情 展开折叠（状态持久化到本地）
+// 今日信息 展开折叠（状态持久化到本地）；农历详情 默认折叠、仅会话内切换，不持久化
 const MC_ALL_KEY = "mytime_mc_all_collapsed";
 const MC_LUNAR_KEY = "mytime_mc_lunar_collapsed";
+let mcLunarOpen = false;
 
 function applyMcCollapse() {
-  // 默认：今日信息展开、农历详情折叠（无存储时按此默认值）
+  // 默认：今日信息展开、农历详情折叠（无存储，刷新后回到折叠）
   const all = localStorage.getItem(MC_ALL_KEY) === "1";
-  const lunar = localStorage.getItem(MC_LUNAR_KEY) !== "0";
+  const lunar = !mcLunarOpen;
   const body = document.getElementById("mcBody");
   const allBtn = document.getElementById("mcToggleAll");
   const lunarBtn = document.getElementById("mcToggleLunar");
@@ -1470,8 +1474,17 @@ function initMcToggles() {
       applyMcCollapse();
     });
   };
+  // 今日信息：持久化展开/折叠
   onToggle(allBtn, MC_ALL_KEY);
-  onToggle(lunarBtn, MC_LUNAR_KEY);
+  // 农历详情：仅会话内切换，不持久化（刷新后回到默认折叠）
+  if (lunarBtn) {
+    lunarBtn.addEventListener("mousedown", e => e.stopPropagation());
+    lunarBtn.addEventListener("click", e => {
+      e.stopPropagation();
+      mcLunarOpen = !mcLunarOpen;
+      applyMcCollapse();
+    });
+  }
   applyMcCollapse();
 }
 

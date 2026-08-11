@@ -689,6 +689,13 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   padding: 2px 0;
   color: var(--text);
 }
+.mc-event__tail {
+  color: var(--text-soft);
+}
+.mc-event__tail--today {
+  color: var(--text);
+  font-weight: 600;
+}
 .mc-event--none {
   color: var(--text-soft);
   font-style: italic;
