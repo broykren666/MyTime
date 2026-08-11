@@ -1419,13 +1419,16 @@ function renderMiniCalendar() {
   } else {
     events.forEach(e => {
       const div = document.createElement("div");
-      div.className = "mc-event mc-event--" + e.type;
+      div.className = "mc-event mc-event--" + e.type + (e.days === 0 ? " mc-event--today" : "");
       const icon = e.type === "jieqi" ? "🌿" : e.type === "lunar" ? "🌸" : "🎉";
-      div.appendChild(document.createTextNode(`${icon} ${e.text} | `));
-      const tail = document.createElement("span");
-      tail.className = "mc-event__tail" + (e.days === 0 ? " mc-event__tail--today" : "");
-      tail.textContent = e.days === 0 ? "今天" : `${e.days}天后`;
-      div.appendChild(tail);
+      div.appendChild(document.createTextNode(`${icon} ${e.text}`));
+      if (e.days !== 0) {
+        div.appendChild(document.createTextNode(" | "));
+        const tail = document.createElement("span");
+        tail.className = "mc-event__tail";
+        tail.textContent = `${e.days}天后`;
+        div.appendChild(tail);
+      }
       eventsRoot.appendChild(div);
     });
   }
