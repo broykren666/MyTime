@@ -1215,7 +1215,7 @@ function holidayStatusMeta(info) {
     case 2: return { cls: "mc-holiday--festival", label: info.name ? `节日 · ${info.name}` : "节日" };
     case 3: return { cls: "mc-holiday--overtime", label: info.name ? `调休 · ${info.name.replace("调休","")}` : "调休上班" };
     case 1: return { cls: "mc-holiday--weekend",  label: "周末" };
-    default: return { cls: "mc-holiday--workday",  label: "工作日" };
+    default: return { cls: "mc-holiday--workday",  label: "工作" };
   }
 }
 
@@ -1293,6 +1293,7 @@ function renderMiniCalendar() {
   const lunar = solar.getLunar();
 
   const elYear = document.getElementById("mcYear");
+  const elYearText = document.getElementById("mcYearText");
   const elDate = document.getElementById("mcDate");
   const elLunar = document.getElementById("mcLunar");
   const elEvents = document.getElementById("mcEvents");
@@ -1306,7 +1307,7 @@ function renderMiniCalendar() {
     elHandleTitle.textContent = "📅 今日信息";
   }
 
-  elYear.textContent = `${y}年`;
+  if (elYearText) elYearText.textContent = `${y}年`;
   elDate.textContent = `${m}月${d}日 ${week}`;
   elLunar.textContent = `${lunar.getYearInGanZhi()}${lunar.getYearShengXiao()}年 · ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}`;
 

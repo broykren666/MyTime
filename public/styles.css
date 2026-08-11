@@ -512,10 +512,17 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 
 .mini-calendar__body { padding: 12px 14px 14px; }
 .mc-year {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--primary-strong);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #fff;
   letter-spacing: .05em;
+}
+.mc-year__text {
+  white-space: nowrap;
 }
 .mc-date {
   font-size: 1.18rem;
@@ -531,6 +538,8 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 }
 .mc-events {
   margin: 10px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--divider, rgba(148, 163, 184, 0.25));
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -550,10 +559,9 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-top: 10px;
-  padding: 5px 10px;
+  padding: 3px 9px;
   border-radius: 999px;
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   font-weight: 600;
   line-height: 1.2;
   letter-spacing: .02em;
@@ -569,5 +577,5 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 .mc-holiday--festival { color: #b42318; background: rgba(220, 38, 38, 0.10); border-color: rgba(220, 38, 38, 0.20); }
 .mc-holiday--weekend  { color: #7a5b00; background: rgba(217, 119, 6, 0.10);  border-color: rgba(217, 119, 6, 0.20); }
 .mc-holiday--overtime { color: #1d4ed8; background: rgba(37, 99, 235, 0.10); border-color: rgba(37, 99, 235, 0.20); }
-.mc-holiday--workday  { color: #475569; background: rgba(71, 85, 105, 0.08);  border-color: rgba(71, 85, 105, 0.16); }
+.mc-holiday--workday  { color: #15803d; background: rgba(22, 163, 74, 0.10);  border-color: rgba(22, 163, 74, 0.20); }
 .mc-holiday--loading  { color: var(--text-soft); background: rgba(100, 116, 139, 0.08); border-color: rgba(100, 116, 139, 0.16); font-weight: 500; }
