@@ -180,9 +180,20 @@ function renderList() {
     tdTime.textContent = formatTime(task);
 
     // 计时器（动态，缓存引用避免每秒 querySelector）
+    // 甘特图结构：.gantt-bar 轨道 > .gantt-fill 进度 + 叠放文字
     const tdTimer = document.createElement("td");
     tdTimer.className = "timer-cell";
     tdTimer.dataset.timer = task.id;
+
+    const bar = document.createElement("div");
+    bar.className = "gantt-bar";
+    const fill = document.createElement("div");
+    fill.className = "gantt-fill";
+    const label = document.createElement("span");
+    label.className = "gantt-label";
+    bar.append(fill, label);
+
+    tdTimer.append(bar);
     timerCells.set(task.id, tdTimer);
 
     // 操作（修改 / 删除）
@@ -733,9 +744,25 @@ function updateTimers() {
   tasks.forEach(task => {
     const cell = timerCells.get(task.id);
     if (!cell) return;
-    const { text, cls } = computeTimer(task, now);
-    cell.textContent = text;
-    cell.className = "timer-cell" + (cls ? " " + cls : "");
+    const { text, cls, progress } = computeTimer(task, now);
+    const textCls = textLevelCls(progress);
+
+    // 兼容异常任务（progress 为 null）：回退纯文字显示，不渲染进度条
+    if (progress === null || progress === undefined) {
+      cell.className = "timer-cell" + (textCls ? " " + textCls : "");
+      cell.textContent = text;
+      return;
+    }
+
+    const bar = cell.querySelector(".gantt-bar");
+    const fill = cell.querySelector(".gantt-fill");
+    const label = cell.querySelector(".gantt-label");
+
+    cell.className = "timer-cell has-gantt" + (textCls ? " " + textCls : "");
+    // 甘特图整条按剩余比例取单色（10 档），从右锚定、随剩余变窄
+    fill.className = "gantt-fill" + (cls ? " " + cls : "");
+    fill.style.width = (progress * 100).toFixed(2) + "%";
+    label.textContent = text;
 
     // 倒计时结束：发送一次浏览器通知
     if (task.type === "countdown" && cls === "is-done" && !notifiedIds.has(task.id)) {
@@ -754,27 +781,36 @@ function updateTimers() {
   });
 }
 
+// 进度条进度计算辅助：在 [from, to] 区间内的占比，clamp 到 0~1
+function progressBetween(from, to, now) {
+  if (to <= from) return 1;
+  const p = (now - from) / (to - from);
+  return Math.max(0, Math.min(1, p));
+}
+
+// 求上一次「每年此日」occur 的 0 点（用于纪念日进度条起点）
+function prevAnnualOccurrence(nextTs, nowTs) {
+  // nextTs 为下一发生点；上一发生点约为一年前同日 0 点
+  const d = new Date(nextTs);
+  const prev = new Date(d.getFullYear() - 1, d.getMonth(), d.getDate(), 0, 0, 0);
+  return prev.getTime();
+}
+
 function computeTimer(task, now) {
   if (task.type === "countdown") {
     const end = (task.createdAt || now) + task.cdValue * unitMs(task.cdUnit);
+    const total = task.cdValue * unitMs(task.cdUnit) || 1;
     const remain = end - now;
-    if (remain <= 0) return { text: "已结束", cls: "is-done" };
+    if (remain <= 0) return { text: "已结束", cls: "is-done", progress: 0, targetLabel: fmtDate(end) };
 
-    const parts = [];
-    let r = remain;
-    const d = Math.floor(r / unitMs("day")); r -= d * unitMs("day");
-    const h = Math.floor(r / unitMs("hour")); r -= h * unitMs("hour");
-    const m = Math.floor(r / unitMs("minute")); r -= m * unitMs("minute");
-    const s = Math.floor(r / 1000);
-
-    if (d > 0) parts.push(`${d}天`);
-    if (h > 0 || d > 0) parts.push(`${h}时`);
-    if (m > 0 || h > 0 || d > 0) parts.push(`${m}分`);
-    parts.push(`${s}秒`);
-
-    // 按剩余分钟分级（不足 1 分钟按 0 处理归为红色）
-    const mins = Math.max(0, Math.floor(remain / 60000));
-    return { text: "剩余 " + parts.join(" "), cls: minuteLevelCls(mins) };
+    // 进度 = 剩余占比（从左往右随时间递减）
+    const progress = Math.max(0, Math.min(1, remain / total));
+    return {
+      text: fmtCountdown(remain),
+      cls: progressLevelCls(progress),
+      progress,
+      targetLabel: fmtDate(end)
+    };
   }
 
   if (task.type === "birthday") {
@@ -782,64 +818,88 @@ function computeTimer(task, now) {
     if (task.calendarType === "lunar") {
       const nowDate = new Date(now);
       const nextTs = nextLunarOccurrence(task.lunarMonth, task.lunarDay, task.lunarLeap, now);
-      if (!nextTs) return { text: "日期不合法", cls: "is-over" };
+      if (!nextTs) return { text: "日期不合法", cls: "is-over", progress: null, targetLabel: "" };
       const diffDays = Math.round((nextTs - startOfDay(now)) / (24 * 3600 * 1000));
       const refYear = getReferenceYear(task);
       const yLabel = refYear ? `${nowDate.getFullYear() - refYear}年 | ` : "";
-      if (diffDays === 0) return { text: `${yLabel}🎉纪念日快乐`, cls: "is-red" };
-      return { text: `${yLabel}距纪念日 ${diffDays}天`, cls: dayLevelCls(diffDays) };
+      if (diffDays === 0) return { text: `${yLabel}🎉纪念日快乐`, cls: "is-red", progress: 0, targetLabel: fmtDate(nextTs) };
+      const progress = 1 - progressBetween(prevAnnualOccurrence(nextTs, now), nextTs, now);
+      return {
+        text: `${yLabel}${fmtCountdown(nextTs - now)}`,
+        cls: progressLevelCls(progress),
+        progress,
+        targetLabel: fmtDate(nextTs)
+      };
     }
     // 公历纪念日
     const born = new Date((task.birthdayValue || todayStr()) + "T00:00:00");
     const years = (now - born.getTime()) / unitMs("year");
     const yLabel = years >= 1 ? `${Math.floor(years)}年 | ` : "";
     const next = nextBirthday(born, now);
-    if (next.diff === 0) return { text: `${yLabel}🎉纪念日快乐`, cls: "is-red" };
-    return { text: `${yLabel}距纪念日 ${next.diff}天`, cls: dayLevelCls(next.diff) };
+    const nextTs = next.nextTs;
+    if (next.diff === 0) return { text: `${yLabel}🎉纪念日快乐`, cls: "is-red", progress: 0, targetLabel: fmtDate(nextTs) };
+    const progress = 1 - progressBetween(prevAnnualOccurrence(nextTs, now), nextTs, now);
+    return {
+      text: `${yLabel}${fmtCountdown(nextTs - now)}`,
+      cls: progressLevelCls(progress),
+      progress,
+      targetLabel: fmtDate(nextTs)
+    };
   }
 
   if (task.type === "fixedday") {
     const days = parseFixeddays(task.fixeddayValue);
-    if (days.length === 0) return { text: "未设置有效日期", cls: "" };
+    if (days.length === 0) return { text: "未设置有效日期", cls: "", progress: null, targetLabel: "" };
     let best = null;
     days.forEach(d => {
       const r = nextFixedDay(d, now);
       if (!best || r.diff < best.diff) best = { ...r, day: d };
     });
-    if (best.diff === 0) return { text: `今天就是（${best.month}月${best.date}日）`, cls: "is-red" };
-    return { text: `距（${best.month}月${best.date}日）还有 ${best.diff}天`, cls: dayLevelCls(best.diff) };
+    const nextTs = new Date(new Date(now).getFullYear(), best.month - 1, best.date, 0, 0, 0).getTime();
+    // 月内周期：起点 = 本月 1 日 0 点，终点 = 目标日 0 点，进度 = 剩余天数占比
+    const monthStartTs = new Date(new Date(now).getFullYear(), best.month - 1, 1, 0, 0, 0).getTime();
+    if (best.diff === 0) return { text: `今天就是（${best.month}月${best.date}日）`, cls: "is-red", progress: 0, targetLabel: `${best.month}月${best.date}日` };
+    const progress = 1 - progressBetween(monthStartTs, nextTs, now);
+    return {
+      text: `${best.month}月${best.date}日 | ${fmtCountdown(nextTs - now)}`,
+      cls: progressLevelCls(progress),
+      progress,
+      targetLabel: `${best.month}月${best.date}日`
+    };
   }
 
   if (task.type === "cron") {
     const expr = task.cronValue || "";
-    if (!expr.trim()) return { text: "未设置表达式", cls: "" };
-    if (typeof Cron === "undefined") return { text: "库未加载", cls: "is-over" };
+    if (!expr.trim()) return { text: "未设置表达式", cls: "", progress: null, targetLabel: "" };
+    if (typeof Cron === "undefined") return { text: "库未加载", cls: "is-over", progress: null, targetLabel: "" };
     let cronInst = cronCache.get(expr);
     if (!cronInst) {
       try {
         cronInst = new Cron(expr);
         cronCache.set(expr, cronInst);
       } catch (e) {
-        return { text: "表达式无效", cls: "is-over" };
+        return { text: "表达式无效", cls: "is-over", progress: null, targetLabel: "" };
       }
     }
     const next = cronInst.nextRun();
-    if (!next) return { text: "无匹配时间", cls: "is-over" };
+    if (!next) return { text: "无匹配时间", cls: "is-over", progress: null, targetLabel: "" };
     const remain = next.getTime() - now;
-    if (remain <= 0) return { text: "已触发", cls: "is-red" };
-    const parts = [];
-    let r = remain;
-    const d = Math.floor(r / unitMs("day")); r -= d * unitMs("day");
-    const h = Math.floor(r / unitMs("hour")); r -= h * unitMs("hour");
-    const m = Math.floor(r / unitMs("minute")); r -= m * unitMs("minute");
-    const s = Math.floor(r / 1000);
-    if (d > 0) parts.push(`${d}天`);
-    if (h > 0 || d > 0) parts.push(`${h}时`);
-    if (m > 0 || h > 0 || d > 0) parts.push(`${m}分`);
-    parts.push(`${s}秒`);
-    // 按剩余分钟分级（不足 1 分钟按 0 处理归为红色）
-    const mins = Math.max(0, Math.floor(remain / 60000));
-    return { text: "剩余 " + parts.join(" "), cls: minuteLevelCls(mins) };
+    if (remain <= 0) return { text: "已触发", cls: "is-red", progress: 0, targetLabel: "Cron" };
+    // 用「下一个触发点」与「下下个触发点」反推周期长度，得到当前周期起点（上一个触发点）
+    // 不依赖库是否提供 prevRun（croner 无此方法），避免进度长期满格的 bug
+    let period = remain;
+    try {
+      const next2 = cronInst.nextRun(new Date(next.getTime() + 1));
+      if (next2) period = Math.max(1, next2.getTime() - next.getTime());
+    } catch (e) { /* 退化用 remain */ }
+    const prevTs = next.getTime() - period;
+    const progress = 1 - progressBetween(prevTs, next.getTime(), now);
+    return {
+      text: fmtCountdown(remain),
+      cls: progressLevelCls(progress),
+      progress,
+      targetLabel: "Cron"
+    };
   }
 
   // 倒数日（固定目标日期，可过去可未来）
@@ -859,12 +919,38 @@ function computeTimer(task, now) {
     const diff = target - now;
     const days = Math.floor(Math.abs(diff) / (24 * 3600 * 1000));
     if (diff >= 0) {
-      if (days === 0) return { text: "今天到期", cls: "is-red" };
-      return { text: `距倒数日 ${days}天`, cls: dayLevelCls(days) };
+      if (days === 0) return { text: "今天到期", cls: "is-red", progress: 0, targetLabel: fmtDate(target) };
+      // 以「一年前到目标日」为一个周期估算进度
+      const from = target - unitMs("year");
+      const progress = 1 - progressBetween(from, target, now);
+      return { text: fmtCountdown(target - now), cls: progressLevelCls(progress), progress, targetLabel: fmtDate(target) };
     }
-    return { text: `已过期 ${days}天`, cls: "is-over" };
+    return { text: `已过期 ${days}天`, cls: "is-over", progress: 0, targetLabel: fmtDate(target) };
   }
-  return { text: "", cls: "" };
+  return { text: "", cls: "", progress: null, targetLabel: "" };
+}
+
+// 时间戳 -> "YYYY-MM-DD" 短日期
+function fmtDate(ts) {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+// 剩余毫秒 -> "xY xD xH xM xS"（英文缩写，统一计时器文本）
+function fmtCountdown(remain) {
+  let r = Math.max(0, remain);
+  const y = Math.floor(r / unitMs("year")); r -= y * unitMs("year");
+  const d = Math.floor(r / unitMs("day")); r -= d * unitMs("day");
+  const h = Math.floor(r / unitMs("hour")); r -= h * unitMs("hour");
+  const m = Math.floor(r / unitMs("minute")); r -= m * unitMs("minute");
+  const s = Math.floor(r / 1000);
+  const parts = [];
+  if (y > 0) parts.push(`${y}y`);
+  if (d > 0 || y > 0) parts.push(`${d}d`);
+  if (h > 0 || d > 0 || y > 0) parts.push(`${h}h`);
+  if (m > 0 || h > 0 || d > 0 || y > 0) parts.push(`${m}m`);
+  parts.push(`${s}s`);
+  return parts.join(" ");
 }
 
 // 计算距离下一次「每月 day 日」的天数
@@ -937,22 +1023,31 @@ function onFixeddayInput() {
   if (newVal !== raw) els.fixeddayInput.value = newVal;
 }
 
-// 按剩余天数返回颜色分级（5 档）：>10 白 / 10-7 蓝 / 6-4 黄 / 3-1 橙 / 0 红
-function dayLevelCls(days) {
-  if (days === 0) return "is-red";
-  if (days <= 3) return "is-orange";
-  if (days <= 6) return "is-yellow";
-  if (days <= 10) return "is-blue";
-  return "";
+// 按剩余比例（progress，0~1）返回甘特图填充色档（整条单色，按长度分 10 档）：
+// 100-90 绿 / 90-80 绿蓝 / 80-70 蓝 / 70-60 蓝黄 / 60-50 黄 /
+// 50-40 黄橙 / 40-30 橙 / 30-20 橙红 / 20-10 红 / 10-0 红紫
+function progressLevelCls(progress) {
+  const p = Math.max(0, Math.min(1, progress));
+  if (p > 0.9) return "";            // 绿（基础色）
+  if (p > 0.8) return "is-green-blue";
+  if (p > 0.7) return "is-blue";
+  if (p > 0.6) return "is-blue-yellow";
+  if (p > 0.5) return "is-yellow";
+  if (p > 0.4) return "is-yellow-orange";
+  if (p > 0.3) return "is-orange";
+  if (p > 0.2) return "is-orange-red";
+  if (p > 0.1) return "is-red";
+  return "is-red-purple";            // 红紫
 }
 
-// 按剩余分钟返回颜色分级（5 档）：>10 白 / 10-5 蓝 / 5-3 黄 / 3-1 橙 / <1 红
-function minuteLevelCls(minutes) {
-  if (minutes < 1) return "is-red";
-  if (minutes <= 3) return "is-orange";
-  if (minutes <= 5) return "is-yellow";
-  if (minutes <= 10) return "is-blue";
-  return "";
+// 文本颜色档（5 档，与甘特图主色对应）
+function textLevelCls(progress) {
+  const p = Math.max(0, Math.min(1, progress));
+  if (p > 0.8) return "";
+  if (p > 0.6) return "is-blue";
+  if (p > 0.4) return "is-yellow";
+  if (p > 0.2) return "is-orange";
+  return "is-red";
 }
 
 // 计算距离下一次生日的天数（今年若已过则取明年）
@@ -965,7 +1060,7 @@ function nextBirthday(born, nowTs) {
     next = new Date(y + 1, born.getMonth(), born.getDate(), 0, 0, 0);
     diffDays = Math.round((next.getTime() - startOfDay(nowTs)) / (24 * 3600 * 1000));
   }
-  return { diff: diffDays };
+  return { diff: diffDays, nextTs: next.getTime() };
 }
 
 function startOfDay(date) {

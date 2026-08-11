@@ -232,6 +232,7 @@ body {
 .table-wrap.revealed { animation: tableFadeIn .18s ease-out; }
 @keyframes tableFadeIn { from { opacity: 0; } to { opacity: 1; } }
 .task-table { width: 100%; border-collapse: collapse; min-width: 720px; }
+.col-timer { min-width: 220px; }
 .task-table thead th {
   position: sticky; top: 0; z-index: 2;
   text-align: left; font-size: 13px; font-weight: 600;
@@ -265,9 +266,11 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 }
 .cell-name { font-weight: 500; }
 .cell-time { color: var(--text-soft); white-space: nowrap; }
+/* 计时器列：纯文字回退样式（无甘特图时） */
 .timer-cell {
   font-family: var(--mono); font-size: 13.5px; font-weight: 600;
   white-space: nowrap; color: var(--text);
+  min-width: 220px;
 }
 .timer-cell.is-over { color: var(--text-soft); opacity: .8; }
 .timer-cell.is-done { color: var(--text-soft); }
@@ -275,6 +278,51 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 .timer-cell.is-yellow { color: var(--warning); }
 .timer-cell.is-orange { color: #EA580C; }
 .timer-cell.is-red { color: var(--danger); font-weight: 700; }
+
+/* ===== 甘特图进度条 ===== */
+.timer-cell.has-gantt { padding: 8px 12px; font-family: var(--font); font-weight: 400; }
+.gantt-bar {
+  position: relative;
+  height: 22px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-soft) 18%, transparent);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+/* 甘特图填充：整条按剩余比例取单色（10 档：绿→红紫），从右锚定、随剩余变窄 */
+.gantt-fill {
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 0%;
+  border-radius: 999px;
+  background: #10B981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.35);
+  transition: width .6s cubic-bezier(.22,.61,.36,1), background-color .4s ease, box-shadow .4s ease;
+}
+.gantt-fill.is-green-blue { background: #259BBB; box-shadow: 0 0 8px rgba(37, 155, 187, 0.4); }
+.gantt-fill.is-blue       { background: #3B82F6; box-shadow: 0 0 8px rgba(59, 130, 246, 0.4); }
+.gantt-fill.is-blue-yellow{ background: #989080; box-shadow: 0 0 8px rgba(152, 144, 128, 0.4); }
+.gantt-fill.is-yellow     { background: #F59E0B; box-shadow: 0 0 8px rgba(245, 158, 11, 0.4); }
+.gantt-fill.is-yellow-orange { background: #EF7B0B; box-shadow: 0 0 8px rgba(239, 123, 11, 0.4); }
+.gantt-fill.is-orange     { background: #EA580C; box-shadow: 0 0 8px rgba(234, 88, 12, 0.4); }
+.gantt-fill.is-orange-red { background: #ED4E28; box-shadow: 0 0 8px rgba(237, 78, 40, 0.42); }
+.gantt-fill.is-red        { background: #EF4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.45); }
+.gantt-fill.is-red-purple { background: #C0307A; box-shadow: 0 0 8px rgba(192, 48, 122, 0.45); }
+.gantt-label {
+  position: relative;
+  z-index: 1;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--mono);
+  white-space: nowrap;
+  color: var(--text);
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.55);
+}
+
+[data-theme="dark"] .gantt-label { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
 
 /* ===== 操作按钮 ===== */
 .ops { display: flex; gap: 6px; flex-wrap: wrap; }
