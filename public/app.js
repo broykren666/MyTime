@@ -772,7 +772,9 @@ function computeTimer(task, now) {
     if (m > 0 || h > 0 || d > 0) parts.push(`${m}分`);
     parts.push(`${s}秒`);
 
-    return { text: "剩余 " + parts.join(" "), cls: "" };
+    // 按剩余分钟分级（不足 1 分钟按 0 处理归为红色）
+    const mins = Math.max(0, Math.floor(remain / 60000));
+    return { text: "剩余 " + parts.join(" "), cls: minuteLevelCls(mins) };
   }
 
   if (task.type === "birthday") {
@@ -784,16 +786,16 @@ function computeTimer(task, now) {
       const diffDays = Math.round((nextTs - startOfDay(now)) / (24 * 3600 * 1000));
       const refYear = getReferenceYear(task);
       const yLabel = refYear ? `（${nowDate.getFullYear() - refYear}年）` : "";
-      if (diffDays === 0) return { text: `${yLabel}🎉纪念日快乐`, cls: "is-birthday" };
-      return { text: `${yLabel}距纪念日 ${diffDays}天`, cls: levelCls(diffDays) };
+      if (diffDays === 0) return { text: `${yLabel}🎉纪念日快乐`, cls: "is-red" };
+      return { text: `${yLabel}距纪念日 ${diffDays}天`, cls: dayLevelCls(diffDays) };
     }
     // 公历纪念日
     const born = new Date((task.birthdayValue || todayStr()) + "T00:00:00");
     const years = (now - born.getTime()) / unitMs("year");
     const yLabel = years >= 1 ? `（${Math.floor(years)}年）` : "";
     const next = nextBirthday(born, now);
-    if (next.diff === 0) return { text: `${yLabel}🎉纪念日快乐`, cls: "is-birthday" };
-    return { text: `${yLabel}距纪念日 ${next.diff}天`, cls: levelCls(next.diff) };
+    if (next.diff === 0) return { text: `${yLabel}🎉纪念日快乐`, cls: "is-red" };
+    return { text: `${yLabel}距纪念日 ${next.diff}天`, cls: dayLevelCls(next.diff) };
   }
 
   if (task.type === "fixedday") {
@@ -804,8 +806,8 @@ function computeTimer(task, now) {
       const r = nextFixedDay(d, now);
       if (!best || r.diff < best.diff) best = { ...r, day: d };
     });
-    if (best.diff === 0) return { text: `今天就是（${best.month}月${best.date}日）`, cls: "is-today" };
-    return { text: `距（${best.month}月${best.date}日）还有 ${best.diff}天`, cls: levelCls(best.diff) };
+    if (best.diff === 0) return { text: `今天就是（${best.month}月${best.date}日）`, cls: "is-red" };
+    return { text: `距（${best.month}月${best.date}日）还有 ${best.diff}天`, cls: dayLevelCls(best.diff) };
   }
 
   if (task.type === "cron") {
@@ -824,7 +826,7 @@ function computeTimer(task, now) {
     const next = cronInst.nextRun();
     if (!next) return { text: "无匹配时间", cls: "is-over" };
     const remain = next.getTime() - now;
-    if (remain <= 0) return { text: "已触发", cls: "is-today" };
+    if (remain <= 0) return { text: "已触发", cls: "is-red" };
     const parts = [];
     let r = remain;
     const d = Math.floor(r / unitMs("day")); r -= d * unitMs("day");
@@ -835,7 +837,9 @@ function computeTimer(task, now) {
     if (h > 0 || d > 0) parts.push(`${h}时`);
     if (m > 0 || h > 0 || d > 0) parts.push(`${m}分`);
     parts.push(`${s}秒`);
-    return { text: "剩余 " + parts.join(" "), cls: levelCls(d) };
+    // 按剩余分钟分级（不足 1 分钟按 0 处理归为红色）
+    const mins = Math.max(0, Math.floor(remain / 60000));
+    return { text: "剩余 " + parts.join(" "), cls: minuteLevelCls(mins) };
   }
 
   // 倒数日（固定目标日期，可过去可未来）
@@ -855,8 +859,8 @@ function computeTimer(task, now) {
     const diff = target - now;
     const days = Math.floor(Math.abs(diff) / (24 * 3600 * 1000));
     if (diff >= 0) {
-      if (days === 0) return { text: "今天到期", cls: "is-today" };
-      return { text: `距倒数日 ${days}天`, cls: levelCls(days) };
+      if (days === 0) return { text: "今天到期", cls: "is-red" };
+      return { text: `距倒数日 ${days}天`, cls: dayLevelCls(days) };
     }
     return { text: `已过期 ${days}天`, cls: "is-over" };
   }
@@ -933,11 +937,22 @@ function onFixeddayInput() {
   if (newVal !== raw) els.fixeddayInput.value = newVal;
 }
 
-// 按剩余天数返回颜色分级：>30 绿 / 10-30 橙 / <10 红；type 决定文案前缀由调用方处理
-function levelCls(days) {
-  if (days > 30) return "is-safe";
-  if (days >= 10) return "is-warn";
-  return "is-urgent";
+// 按剩余天数返回颜色分级（5 档）：>10 白 / 10-7 蓝 / 6-4 黄 / 3-1 橙 / 0 红
+function dayLevelCls(days) {
+  if (days === 0) return "is-red";
+  if (days <= 3) return "is-orange";
+  if (days <= 6) return "is-yellow";
+  if (days <= 10) return "is-blue";
+  return "";
+}
+
+// 按剩余分钟返回颜色分级（5 档）：>10 白 / 10-5 蓝 / 5-3 黄 / 3-1 橙 / <1 红
+function minuteLevelCls(minutes) {
+  if (minutes < 1) return "is-red";
+  if (minutes <= 3) return "is-orange";
+  if (minutes <= 5) return "is-yellow";
+  if (minutes <= 10) return "is-blue";
+  return "";
 }
 
 // 计算距离下一次生日的天数（今年若已过则取明年）

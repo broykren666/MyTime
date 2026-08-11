@@ -267,15 +267,14 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 .cell-time { color: var(--text-soft); white-space: nowrap; }
 .timer-cell {
   font-family: var(--mono); font-size: 13.5px; font-weight: 600;
-  white-space: nowrap; color: var(--primary-strong);
+  white-space: nowrap; color: var(--text);
 }
 .timer-cell.is-over { color: var(--text-soft); opacity: .8; }
 .timer-cell.is-done { color: var(--text-soft); }
-.timer-cell.is-birthday { color: var(--warning); }
-.timer-cell.is-today { color: var(--primary-strong); font-weight: 700; }
-.timer-cell.is-safe { color: var(--primary-strong); }
-.timer-cell.is-warn { color: var(--warning); }
-.timer-cell.is-urgent { color: var(--danger); }
+.timer-cell.is-blue { color: var(--primary-strong); }
+.timer-cell.is-yellow { color: var(--warning); }
+.timer-cell.is-orange { color: #EA580C; }
+.timer-cell.is-red { color: var(--danger); font-weight: 700; }
 
 /* ===== 操作按钮 ===== */
 .ops { display: flex; gap: 6px; flex-wrap: wrap; }
