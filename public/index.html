@@ -80,13 +80,11 @@
       <button type="button" class="mc-toggle" id="mcToggleAll" aria-label="展开/折叠今日信息">−</button>
     </div>
     <div class="mini-calendar__body" id="mcBody">
-      <div class="mc-year" id="mcYear">
-        <span class="mc-year__text" id="mcYearText"></span>
-        <span class="mc-holiday mc-holiday--workday" id="mcHoliday"><span class="mc-holiday__dot"></span>工作</span>
-      </div>
-      <div class="mc-date-row">
-        <div class="mc-date" id="mcDate"></div>
-        <span class="mc-xz" id="mcXz"></span>
+      <div class="mc-date-line" id="mcDateLine"></div>
+      <div class="mc-pills" id="mcPills">
+        <span class="mc-pill mc-pill--week" id="mcWeek"></span>
+        <span class="mc-pill mc-pill--holiday" id="mcHoliday"><span class="mc-holiday__dot"></span><span class="mc-holiday__label">工作</span></span>
+        <span class="mc-pill mc-pill--xz" id="mcXz"></span>
       </div>
       <div class="mc-lunar-row">
         <div class="mc-lunar" id="mcLunar"></div>

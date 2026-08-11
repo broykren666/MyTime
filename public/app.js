@@ -1300,9 +1300,8 @@ function renderMiniCalendar() {
   const solar = Solar.fromYmd(y, m, d);
   const lunar = solar.getLunar();
 
-  const elYear = document.getElementById("mcYear");
-  const elYearText = document.getElementById("mcYearText");
-  const elDate = document.getElementById("mcDate");
+  const elDateLine = document.getElementById("mcDateLine");
+  const elWeek = document.getElementById("mcWeek");
   const elXz = document.getElementById("mcXz");
   const elLunar = document.getElementById("mcLunar");
   const elAlmanac = document.getElementById("mcAlmanac");
@@ -1315,7 +1314,7 @@ function renderMiniCalendar() {
   const elEventsList = document.getElementById("mcEventsList");
   const elHoliday = document.getElementById("mcHoliday");
   const elHandleTitle = document.getElementById("mcHandleTitle");
-  if (!elYear || !elDate || !elLunar || !elEvents) return;
+  if (!elDateLine || !elWeek || !elLunar || !elEvents) return;
 
   const week = WEEK_CN[now.getDay()];
 
@@ -1323,9 +1322,9 @@ function renderMiniCalendar() {
     elHandleTitle.textContent = "今日信息";
   }
 
-  if (elYearText) elYearText.textContent = `${y}年`;
-  elDate.textContent = `${m}月${d}日 ${week}`;
-  if (elXz) elXz.textContent = `${solar.getXingZuo()}座`;
+  elDateLine.textContent = `${y}年${m}月${d}日`;
+  elWeek.textContent = week;
+  elXz.textContent = `${solar.getXingZuo()}座`;
   elLunar.textContent = `${lunar.getYearInGanZhi()}${lunar.getYearShengXiao()}年 · ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}`;
 
   // 黄历：宜 / 忌（标签各占一行，详情按 5 列表格布局）

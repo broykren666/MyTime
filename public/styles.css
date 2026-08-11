@@ -535,45 +535,37 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 .mini-calendar__body.is-collapsed { display: none; }
 
 /* 紧凑折叠：仅显示头部时减小手柄下边距由 body 控制，body 隐藏即可 */
-.mc-year {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 1.15rem;
-  font-weight: 700;
+.mc-date-line {
+  font-size: 1.05rem;
+  font-weight: 800;
   color: var(--text);
-  letter-spacing: .05em;
+  letter-spacing: .03em;
+  line-height: 1.2;
+  margin-bottom: 10px;
 }
-.mc-year__text {
+/* 胶囊组：星期 / 星座 / 工作 */
+.mc-pills {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+.mc-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-soft);
+  background: rgba(148, 163, 184, 0.14);
+  padding: 5px 10px;
+  border-radius: 999px;
   white-space: nowrap;
 }
-.mc-date-row {
-  display: flex;
-  align-items: baseline;
-  padding-bottom: 9px;
-  border-bottom: 1px solid var(--divider, rgba(148, 163, 184, 0.25));
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 2px;
-}
-.mc-date {
-  font-size: 1.0rem;
-  font-weight: 700;
-  color: var(--text);
-  line-height: 1.2;
-}
-/* 星座胶囊 */
-.mc-xz {
-  flex: none;
-  font-size: 0.72rem;
-  font-weight: 600;
+.mc-pill--xz {
   color: var(--primary-strong);
   background: var(--primary-soft, rgba(99, 102, 241, 0.12));
   border: 1px solid var(--primary-soft, rgba(99, 102, 241, 0.25));
-  padding: 1px 9px;
-  border-radius: 999px;
-  white-space: nowrap;
 }
 .mc-lunar-row {
   display: flex;
