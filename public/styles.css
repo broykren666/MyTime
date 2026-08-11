@@ -211,7 +211,7 @@ body {
   white-space: nowrap;
 }
 .task-table tbody td {
-  padding: 14px 16px; border-bottom: 1px solid #F1F5F9;
+  padding: 9px 16px; border-bottom: 1px solid #F1F5F9;
   font-size: 14px; vertical-align: middle;
 }
 .task-table tbody tr:nth-child(even) { background: #FBFCFE; }
