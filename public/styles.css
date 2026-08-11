@@ -567,6 +567,14 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   background: var(--primary-soft, rgba(99, 102, 241, 0.12));
   border: 1px solid var(--primary-soft, rgba(99, 102, 241, 0.25));
 }
+/* 星期胶囊：星期一~星期日对应彩虹七色（getDay(): 0=日 … 6=六） */
+.mc-pill--rainbow-1 { color: #e23b3b; background: rgba(226, 59, 59, 0.14); } /* 红 一 */
+.mc-pill--rainbow-2 { color: #ef8a17; background: rgba(239, 138, 23, 0.14); } /* 橙 二 */
+.mc-pill--rainbow-3 { color: #d4b106; background: rgba(212, 177, 6, 0.14); }  /* 黄 三 */
+.mc-pill--rainbow-4 { color: #2fa84f; background: rgba(47, 168, 79, 0.14); }  /* 绿 四 */
+.mc-pill--rainbow-5 { color: #14a3a3; background: rgba(20, 163, 163, 0.14); } /* 青 五 */
+.mc-pill--rainbow-6 { color: #2f6fe0; background: rgba(47, 111, 224, 0.14); } /* 蓝 六 */
+.mc-pill--rainbow-0 { color: #8b4fd0; background: rgba(139, 79, 208, 0.14); } /* 紫 日 */
 .mc-lunar-row {
   display: flex;
   align-items: center;

@@ -1324,6 +1324,7 @@ function renderMiniCalendar() {
 
   elDateLine.textContent = `${y}年${m}月${d}日`;
   elWeek.textContent = week;
+  elWeek.className = "mc-pill mc-pill--week mc-pill--rainbow-" + now.getDay();
   elXz.textContent = `${solar.getXingZuo()}座`;
   elLunar.textContent = `${lunar.getYearInGanZhi()}${lunar.getYearShengXiao()}年 · ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}`;
 
