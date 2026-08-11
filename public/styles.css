@@ -293,12 +293,12 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 }
 .gantt-fill {
   position: absolute;
-  left: 0; top: 0; bottom: 0;
+  right: 0; top: 0; bottom: 0;
   width: 0%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--primary), var(--success));
+  background: linear-gradient(270deg, var(--primary), var(--success));
   transition: width .6s cubic-bezier(.22,.61,.36,1);
-  box-shadow: 0 0 8px rgba(59, 130, 246, 0.35);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.35);
 }
 .gantt-label {
   position: relative;
@@ -311,17 +311,6 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   color: var(--text);
   text-shadow: 0 1px 2px rgba(255, 255, 255, 0.55);
 }
-
-/* 颜色分级：进度条填充随 cls 变化 */
-.timer-cell.is-red .gantt-fill { background: linear-gradient(90deg, #F87171, var(--danger)); box-shadow: 0 0 8px rgba(239, 68, 68, 0.4); }
-.timer-cell.is-red .gantt-label { color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35); }
-.timer-cell.is-orange .gantt-fill { background: linear-gradient(90deg, #FBBF24, #EA580C); }
-.timer-cell.is-yellow .gantt-fill { background: linear-gradient(90deg, #FDE68A, var(--warning)); }
-.timer-cell.is-blue .gantt-fill { background: linear-gradient(90deg, var(--primary), var(--primary-strong)); }
-.timer-cell.is-done .gantt-fill { background: linear-gradient(90deg, #CBD5E1, var(--text-soft)); box-shadow: none; }
-.timer-cell.is-done .gantt-label { color: var(--text-soft); text-shadow: none; }
-.timer-cell.is-over .gantt-fill { background: linear-gradient(90deg, #CBD5E1, var(--text-soft)); box-shadow: none; }
-.timer-cell.is-over .gantt-label { color: var(--text-soft); text-shadow: none; }
 
 [data-theme="dark"] .gantt-label { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
 
