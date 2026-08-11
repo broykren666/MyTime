@@ -76,20 +76,39 @@
   <!-- 独立小日历控件：今日信息（可拖动，位置持久化到本地） -->
   <aside id="miniCalendar" class="mini-calendar" aria-label="今日信息">
     <div class="mini-calendar__handle" title="拖动移动位置">
-      <span class="mini-calendar__title" id="mcHandleTitle">今日</span>
+      <span class="mini-calendar__title" id="mcHandleTitle">今日信息</span>
+      <button type="button" class="mc-toggle" id="mcToggleAll" aria-label="展开/折叠今日信息">−</button>
     </div>
-    <div class="mini-calendar__body">
+    <div class="mini-calendar__body" id="mcBody">
       <div class="mc-year" id="mcYear">
         <span class="mc-year__text" id="mcYearText"></span>
         <span class="mc-holiday mc-holiday--workday" id="mcHoliday"><span class="mc-holiday__dot"></span>工作</span>
       </div>
-      <div class="mc-date" id="mcDate"></div>
-      <div class="mc-lunar" id="mcLunar"></div>
-      <div class="mc-almanac" id="mcAlmanac"></div>
-      <div class="mc-pengzu" id="mcPengzu"></div>
-      <div class="mc-meta" id="mcMeta"></div>
-      <div class="mc-position" id="mcPosition"></div>
-      <div class="mc-events" id="mcEvents"></div>
+      <div class="mc-date-row">
+        <div class="mc-date" id="mcDate"></div>
+        <span class="mc-xz" id="mcXz"></span>
+      </div>
+      <div class="mc-lunar-row">
+        <div class="mc-lunar" id="mcLunar"></div>
+        <button type="button" class="mc-toggle" id="mcToggleLunar" aria-label="展开/折叠农历详情">+</button>
+      </div>
+      <div class="mc-lunar-detail" id="mcLunarDetail">
+        <div class="mc-detail-block" id="mcMeta"></div>
+        <div class="mc-divider"></div>
+        <div class="mc-detail-block mc-almanac" id="mcAlmanac"></div>
+        <div class="mc-divider"></div>
+        <div class="mc-detail-block mc-pengzu" id="mcPengzu"></div>
+        <div class="mc-divider"></div>
+        <div class="mc-detail-block mc-jixiong" id="mcJiXiong"></div>
+        <div class="mc-divider"></div>
+        <div class="mc-detail-block mc-sha" id="mcSha"></div>
+        <div class="mc-divider"></div>
+        <div class="mc-detail-block mc-position" id="mcPosition"></div>
+      </div>
+      <div class="mc-events" id="mcEvents">
+        <span class="mc-tag">节日节气</span>
+        <div class="mc-events__list" id="mcEventsList"></div>
+      </div>
     </div>
   </aside>
 

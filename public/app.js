@@ -1303,12 +1303,16 @@ function renderMiniCalendar() {
   const elYear = document.getElementById("mcYear");
   const elYearText = document.getElementById("mcYearText");
   const elDate = document.getElementById("mcDate");
+  const elXz = document.getElementById("mcXz");
   const elLunar = document.getElementById("mcLunar");
   const elAlmanac = document.getElementById("mcAlmanac");
   const elPengzu = document.getElementById("mcPengzu");
   const elMeta = document.getElementById("mcMeta");
   const elPosition = document.getElementById("mcPosition");
+  const elJiXiong = document.getElementById("mcJiXiong");
+  const elSha = document.getElementById("mcSha");
   const elEvents = document.getElementById("mcEvents");
+  const elEventsList = document.getElementById("mcEventsList");
   const elHoliday = document.getElementById("mcHoliday");
   const elHandleTitle = document.getElementById("mcHandleTitle");
   if (!elYear || !elDate || !elLunar || !elEvents) return;
@@ -1316,45 +1320,80 @@ function renderMiniCalendar() {
   const week = WEEK_CN[now.getDay()];
 
   if (elHandleTitle) {
-    elHandleTitle.textContent = "📅 今日信息";
+    elHandleTitle.textContent = "今日信息";
   }
 
   if (elYearText) elYearText.textContent = `${y}年`;
   elDate.textContent = `${m}月${d}日 ${week}`;
+  if (elXz) elXz.textContent = `${solar.getXingZuo()}座`;
   elLunar.textContent = `${lunar.getYearInGanZhi()}${lunar.getYearShengXiao()}年 · ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}`;
 
-  // 黄历：宜 / 忌
+  // 黄历：宜 / 忌（标签各占一行，详情按 5 列表格布局）
   if (elAlmanac) {
-    const yi = lunar.getDayYi();
-    const ji = lunar.getDayJi();
-    const yiText = (yi && yi.length) ? yi.join(" ") : "无";
-    const jiText = (ji && ji.length) ? ji.join(" ") : "无";
+    const yi = (lunar.getDayYi() || []);
+    const ji = (lunar.getDayJi() || []);
+    const yiCells = yi.length
+      ? yi.map(t => `<span class="mc-almanac__cell">${t}</span>`).join("")
+      : `<span class="mc-almanac__cell">无</span>`;
+    const jiCells = ji.length
+      ? ji.map(t => `<span class="mc-almanac__cell">${t}</span>`).join("")
+      : `<span class="mc-almanac__cell">无</span>`;
     elAlmanac.innerHTML =
-      `<span class="mc-almanac__label mc-almanac__label--yi">宜</span>` +
-      `<span class="mc-almanac__val">${yiText}</span>` +
-      `<span class="mc-almanac__label mc-almanac__label--ji">忌</span>` +
-      `<span class="mc-almanac__val">${jiText}</span>`;
+      `<span class="mc-tag mc-tag--yi">宜</span>` +
+      `<span class="mc-almanac__grid mc-detail-val--block">${yiCells}</span>` +
+      `<span class="mc-tag mc-tag--ji">忌</span>` +
+      `<span class="mc-almanac__grid mc-detail-val--block">${jiCells}</span>`;
   }
 
-  // 彭祖百忌
+  // 彭祖百忌（每句独立一行）
   if (elPengzu) {
-    const pg = [lunar.getPengZuGan(), lunar.getPengZuZhi()].filter(Boolean).join("　");
-    elPengzu.innerHTML = `<span class="mc-pengzu__label">彭祖百忌</span><span class="mc-pengzu__val">${pg}</span>`;
+    const pgList = [lunar.getPengZuGan(), lunar.getPengZuZhi()].filter(Boolean);
+    elPengzu.innerHTML =
+      `<span class="mc-tag">彭祖百忌</span>` +
+      `<span class="mc-detail-val mc-detail-val--block">` +
+      pgList.map(t => `<span class="mc-pengzu__line">${t}</span>`).join("") +
+      `</span>`;
   }
 
-  // 干支 / 二十八宿 / 建星 / 星座
+  // 干支 / 二十八宿 / 建星（标签独占一行，详情在下一行）
   if (elMeta) {
     const ganzhi = `${lunar.getYearInGanZhi()}·${lunar.getMonthInGanZhi()}·${lunar.getDayInGanZhi()}`;
     const xiu = lunar.getXiu ? lunar.getXiu() : "";
     const zhiXing = lunar.getZhiXing ? lunar.getZhiXing() : "";
-    const xingzuo = solar.getXingZuo();
+    const tail = [xiu, zhiXing].filter(Boolean).join("·");
     elMeta.innerHTML =
-      `<span class="mc-meta__item">干支 <b>${ganzhi}</b></span>` +
-      `<span class="mc-meta__item">${xiu}${zhiXing ? "·" + zhiXing : ""}</span>` +
-      `<span class="mc-meta__item">${xingzuo}座</span>`;
+      `<span class="mc-tag">干支</span>` +
+      `<span class="mc-detail-val mc-detail-val--block"><b>${ganzhi}</b>${tail ? "　" + tail : ""}</span>`;
   }
 
-  // 吉神方位：喜神 / 财神 / 福神 / 阳贵 / 阴贵
+  // 吉神宜趋 / 凶神宜忌（标签独占一行，详情按 5 列表格布局，各占一格）
+  if (elJiXiong) {
+    const jiShen = (lunar.getDayJiShen() || []);
+    const xiongSha = (lunar.getDayXiongSha() || []);
+    const jiCells = jiShen.length
+      ? jiShen.map(t => `<span class="mc-almanac__cell">${t}</span>`).join("")
+      : `<span class="mc-almanac__cell">无</span>`;
+    const xiongCells = xiongSha.length
+      ? xiongSha.map(t => `<span class="mc-almanac__cell">${t}</span>`).join("")
+      : `<span class="mc-almanac__cell">无</span>`;
+    elJiXiong.innerHTML =
+      `<span class="mc-tag mc-tag--yi">吉神宜趋</span>` +
+      `<span class="mc-almanac__grid mc-detail-val--block">${jiCells}</span>` +
+      `<span class="mc-tag mc-tag--ji">凶神宜忌</span>` +
+      `<span class="mc-almanac__grid mc-detail-val--block">${xiongCells}</span>`;
+  }
+
+  // 生肖冲煞（标签独占一行，详情下一行）
+  if (elSha) {
+    const chong = lunar.getDayChongDesc();
+    const sha = lunar.getDaySha();
+    const parts = [chong ? `冲${chong}` : "", sha ? `煞${sha}` : ""].filter(Boolean);
+    elSha.innerHTML =
+      `<span class="mc-tag">生肖冲煞</span>` +
+      `<span class="mc-detail-val mc-detail-val--block">${parts.join("　") || "无"}</span>`;
+  }
+
+  // 吉神方位：喜神 / 财神 / 福神 / 阳贵 / 阴贵（3列表格布局，标签独占一行）
   if (elPosition) {
     const items = [
       ["喜神", lunar.getDayPositionXiDesc()],
@@ -1363,18 +1402,21 @@ function renderMiniCalendar() {
       ["阳贵", lunar.getDayPositionYangGui && lunar.getDayPositionYangGui()],
       ["阴贵", lunar.getDayPositionYinGui && lunar.getDayPositionYinGui()],
     ].filter(it => it[1]);
-    elPosition.innerHTML = items
-      .map(([k, v]) => `<span class="mc-position__item"><i>${k}</i>${v}</span>`)
-      .join("");
+    elPosition.innerHTML =
+      `<span class="mc-tag">喜神方位</span>` +
+      `<span class="mc-position__table mc-detail-val--block">` +
+      items.map(([k, v]) => `<span class="mc-position__cell"><i>${k}</i>${v}</span>`).join("") +
+      `</span>`;
   }
 
   const events = buildMiniCalendarEvents(now);
-  elEvents.innerHTML = "";
+  const eventsRoot = elEventsList || elEvents;
+  eventsRoot.innerHTML = "";
   if (events.length === 0) {
     const div = document.createElement("div");
     div.className = "mc-event mc-event--none";
     div.textContent = "未来一年无节日 / 节气";
-    elEvents.appendChild(div);
+    eventsRoot.appendChild(div);
   } else {
     events.forEach(e => {
       const div = document.createElement("div");
@@ -1382,7 +1424,7 @@ function renderMiniCalendar() {
       const icon = e.type === "jieqi" ? "🌿" : "🎉";
       const tail = e.days === 0 ? "" : `（${e.days}天后）`;
       div.textContent = `${icon} ${e.text}${tail}`;
-      elEvents.appendChild(div);
+      eventsRoot.appendChild(div);
     });
   }
 
@@ -1394,6 +1436,43 @@ function renderMiniCalendar() {
     elHoliday.className = "mc-holiday " + meta.cls;
     elHoliday.innerHTML = `<span class="mc-holiday__dot"></span>${meta.label}`;
   }
+}
+
+// 今日信息 / 农历详情 展开折叠（状态持久化到本地）
+const MC_ALL_KEY = "mytime_mc_all_collapsed";
+const MC_LUNAR_KEY = "mytime_mc_lunar_collapsed";
+
+function applyMcCollapse() {
+  // 默认：今日信息展开、农历详情折叠（无存储时按此默认值）
+  const all = localStorage.getItem(MC_ALL_KEY) === "1";
+  const lunar = localStorage.getItem(MC_LUNAR_KEY) !== "0";
+  const body = document.getElementById("mcBody");
+  const allBtn = document.getElementById("mcToggleAll");
+  const lunarBtn = document.getElementById("mcToggleLunar");
+  const detail = document.getElementById("mcLunarDetail");
+  if (body) body.classList.toggle("is-collapsed", all);
+  if (allBtn) allBtn.textContent = all ? "+" : "−";
+  if (detail) detail.classList.toggle("is-collapsed", lunar);
+  if (lunarBtn) lunarBtn.textContent = lunar ? "+" : "−";
+}
+
+function initMcToggles() {
+  const allBtn = document.getElementById("mcToggleAll");
+  const lunarBtn = document.getElementById("mcToggleLunar");
+  const onToggle = (btn, key) => {
+    if (!btn) return;
+    // 阻止冒泡，避免触发标题栏拖拽
+    btn.addEventListener("mousedown", e => e.stopPropagation());
+    btn.addEventListener("click", e => {
+      e.stopPropagation();
+      const cur = localStorage.getItem(key) === "1";
+      localStorage.setItem(key, cur ? "0" : "1");
+      applyMcCollapse();
+    });
+  };
+  onToggle(allBtn, MC_ALL_KEY);
+  onToggle(lunarBtn, MC_LUNAR_KEY);
+  applyMcCollapse();
 }
 
 // 拖拽 + 位置持久化
@@ -1707,6 +1786,7 @@ renderMiniCalendar();
 // 每天首次打开时获取当天节假日信息（缓存命中则不会发请求）
 ensureTodayHoliday(todayKey());
 initMiniCalendarDrag();
+initMcToggles();
 setInterval(updateTimers, 1000);
 
 // 跨天自动刷新小日历信息：每分钟检查一次日期是否变化

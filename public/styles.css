@@ -501,8 +501,8 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 .mini-calendar__handle {
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 9px 12px;
+  justify-content: space-between;
+  padding: 9px 10px 9px 12px;
   cursor: grab;
   background: linear-gradient(135deg, var(--primary), var(--primary-strong));
   color: #fff;
@@ -510,13 +510,37 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 .mini-calendar__handle:active { cursor: grabbing; }
 .mini-calendar__title { font-size: 0.85rem; font-weight: 600; letter-spacing: .03em; }
 
+/* 展开/折叠按钮 */
+.mc-toggle {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background .15s, transform .15s;
+}
+.mc-toggle:hover { background: rgba(255, 255, 255, 0.28); }
+.mc-toggle:active { transform: scale(0.92); }
+
 .mini-calendar__body { padding: 12px 14px 14px; }
+.mini-calendar__body.is-collapsed { display: none; }
+
+/* 紧凑折叠：仅显示头部时减小手柄下边距由 body 控制，body 隐藏即可 */
 .mc-year {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  font-size: 1.35rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: var(--text);
   letter-spacing: .05em;
@@ -524,31 +548,77 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 .mc-year__text {
   white-space: nowrap;
 }
+.mc-date-row {
+  display: flex;
+  align-items: baseline;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--divider, rgba(148, 163, 184, 0.25));
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+}
 .mc-date {
-  font-size: 1.18rem;
+  font-size: 1.0rem;
   font-weight: 700;
   color: var(--text);
-  margin-top: 2px;
   line-height: 1.2;
+}
+/* 星座胶囊 */
+.mc-xz {
+  flex: none;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--primary-strong);
+  background: var(--primary-soft, rgba(99, 102, 241, 0.12));
+  border: 1px solid var(--primary-soft, rgba(99, 102, 241, 0.25));
+  padding: 1px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.mc-lunar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 3px;
 }
 .mc-lunar {
   font-size: 0.8rem;
   color: var(--text-soft);
-  margin-top: 3px;
 }
-.mc-almanac {
+.mc-lunar-row .mc-toggle {
+  border-color: var(--divider, rgba(148, 163, 184, 0.4));
+  background: var(--surface-2, rgba(148, 163, 184, 0.12));
+  color: var(--text);
+}
+.mc-lunar-row .mc-toggle:hover { background: var(--surface-3, rgba(148, 163, 184, 0.22)); }
+
+/* 农历详情（可折叠） */
+.mc-lunar-detail { margin-top: 9px; }
+.mc-lunar-detail.is-collapsed { display: none; }
+.mc-detail-block {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 4px 6px;
-  margin-top: 6px;
-  font-size: 0.78rem;
+  margin-top: 8px;
+  font-size: 0.76rem;
   line-height: 1.5;
+  color: var(--text-soft);
 }
-.mc-almanac__label {
+.mc-detail-val { color: var(--text); }
+.mc-detail-val b { color: var(--text); font-weight: 600; }
+/* 标签独占一行时，详情换行显示 */
+.mc-detail-val--block {
+  flex-basis: 100%;
+  margin-top: 2px;
+}
+
+/* 通用标签（干/彭/神）与宜忌标签 */
+.mc-tag {
   flex: none;
-  width: 18px;
   height: 18px;
+  padding: 0 6px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -556,53 +626,59 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   font-size: 0.72rem;
   font-weight: 700;
   color: #fff;
+  background: var(--primary);
 }
-.mc-almanac__label--yi { background: #10B981; }
-.mc-almanac__label--ji { background: #EF4444; }
-.mc-almanac__val {
+.mc-tag--yi { background: #10B981; }
+.mc-tag--ji { background: #EF4444; }
+
+.mc-almanac { margin-top: 8px; }
+.mc-almanac__grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 3px 8px;
+}
+.mc-almanac__cell {
+  font-size: 0.76rem;
   color: var(--text);
-  margin-right: 4px;
+  white-space: nowrap;
 }
-.mc-pengzu {
-  display: flex;
-  gap: 6px;
-  margin-top: 7px;
-  font-size: 0.74rem;
-  line-height: 1.5;
+.mc-pengzu .mc-detail-val { color: var(--text-soft); }
+/* 彭祖百忌每句独立一行 */
+.mc-pengzu__line { display: block; }
+/* 喜神方位 3 列表格 */
+.mc-position__table {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px 10px;
 }
-.mc-pengzu__label {
-  flex: none;
-  color: var(--text-soft);
-  font-weight: 600;
-}
-.mc-pengzu__val { color: var(--text-soft); }
-.mc-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 10px;
-  margin-top: 7px;
+.mc-position__cell {
   font-size: 0.76rem;
   color: var(--text-soft);
+  white-space: nowrap;
 }
-.mc-meta__item b { color: var(--text); font-weight: 600; }
-.mc-position {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 10px;
-  margin-top: 5px;
-  font-size: 0.76rem;
-  color: var(--text-soft);
-}
-.mc-position__item i {
+.mc-position__cell i {
   font-style: normal;
   color: var(--primary-strong);
   font-weight: 600;
   margin-right: 3px;
 }
+
+/* 农历详情分割线 */
+.mc-divider {
+  height: 1px;
+  background: var(--divider, rgba(148, 163, 184, 0.25));
+  margin: 9px 0;
+}
 .mc-events {
   margin: 10px 0 0;
   padding-top: 10px;
   border-top: 1px solid var(--divider, rgba(148, 163, 184, 0.25));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.mc-events__list {
   display: flex;
   flex-direction: column;
   gap: 6px;
