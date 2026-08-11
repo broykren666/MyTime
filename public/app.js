@@ -83,6 +83,7 @@ if (tasksDirty) saveTasks();
 let editingId = null; // null = 添加模式
 const notifiedIds = new Set(); // 已发送过结束通知的倒计时任务 id，避免每秒重复提醒
 const cronCache = new Map(); // 缓存 Croner 实例，key 为 cron 表达式
+const cronLastNext = new Map(); // 记录每个 cron 任务上次观测到的「下次触发时间」，用于检测触发边界
 const timerCells = new Map(); // taskId → 计时器 DOM 元素，避免每次 updateTimers 做 O(n) querySelector
 
 /* ---------- DOM 引用 ---------- */
@@ -877,15 +878,7 @@ function updateTimers() {
       notifiedIds.add(task.id);
       notify(task.name, "倒计时已结束");
     }
-    // Cron 触发：每个触发周期发送一次通知，重置时清除标记
-    if (task.type === "cron") {
-      if (text === "已触发" && !notifiedIds.has(task.id)) {
-        notifiedIds.add(task.id);
-        notify(task.name, "Cron 任务已触发");
-      } else if (text !== "已触发") {
-        notifiedIds.delete(task.id);
-      }
-    }
+    // Cron 触发通知已在 computeTimer 内通过「下次触发指针推进」检测并发送，此处不再处理
   });
 }
 
@@ -993,7 +986,22 @@ function computeTimer(task, now) {
     }
     const next = cronInst.nextRun();
     if (!next) return { text: "无匹配时间", cls: "is-over", progress: null, targetLabel: "" };
-    const remain = next.getTime() - now;
+    // 触发检测：croner 的 nextRun() 永远返回未来时间，不会返回 <=now 的「已触发」态。
+    // 因此用「下次触发指针」是否向前推进来判断一个周期是否刚结束/刚触发。
+    const nextTs = next.getTime();
+    const lastNextTs = cronLastNext.get(task.id);
+    if (lastNextTs !== undefined && nextTs > lastNextTs + 100) {
+      // 指针跳过了至少一个边界 → 刚触发一次，发一次通知（不重复）
+      if (!notifiedIds.has(task.id)) {
+        notifiedIds.add(task.id);
+        notify(task.name, "Cron 任务已触发");
+      }
+    } else if (nextTs <= lastNextTs + 100) {
+      // 仍在同一周期内，清除已通知标记以便下次触发可再次提醒
+      notifiedIds.delete(task.id);
+    }
+    cronLastNext.set(task.id, nextTs);
+    const remain = nextTs - now;
     if (remain <= 0) return { text: "已触发", cls: "is-red", progress: 0, targetLabel: "Cron" };
     // 用「下一个触发点」与「下下个触发点」反推周期长度，得到当前周期起点（上一个触发点）
     // 不依赖库是否提供 prevRun（croner 无此方法），避免进度长期满格的 bug
