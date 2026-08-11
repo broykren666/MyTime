@@ -800,23 +800,11 @@ function computeTimer(task, now) {
     const remain = end - now;
     if (remain <= 0) return { text: "已结束", cls: "is-done", progress: 0, targetLabel: fmtDate(end) };
 
-    const parts = [];
-    let r = remain;
-    const d = Math.floor(r / unitMs("day")); r -= d * unitMs("day");
-    const h = Math.floor(r / unitMs("hour")); r -= h * unitMs("hour");
-    const m = Math.floor(r / unitMs("minute")); r -= m * unitMs("minute");
-    const s = Math.floor(r / 1000);
-
-    if (d > 0) parts.push(`${d}天`);
-    if (h > 0 || d > 0) parts.push(`${h}时`);
-    if (m > 0 || h > 0 || d > 0) parts.push(`${m}分`);
-    parts.push(`${s}秒`);
-
     // 按剩余分钟分级（不足 1 分钟按 0 处理归为红色）
     const mins = Math.max(0, Math.floor(remain / 60000));
     // 进度 = 剩余占比（从左往右随时间递减）
     return {
-      text: parts.join(" "),
+      text: fmtCountdown(remain),
       cls: minuteLevelCls(mins),
       progress: Math.max(0, Math.min(1, remain / total)),
       targetLabel: fmtDate(end)
@@ -900,20 +888,10 @@ function computeTimer(task, now) {
       if (next2) period = Math.max(1, next2.getTime() - next.getTime());
     } catch (e) { /* 退化用 remain */ }
     const prevTs = next.getTime() - period;
-    const parts = [];
-    let r = remain;
-    const d = Math.floor(r / unitMs("day")); r -= d * unitMs("day");
-    const h = Math.floor(r / unitMs("hour")); r -= h * unitMs("hour");
-    const m = Math.floor(r / unitMs("minute")); r -= m * unitMs("minute");
-    const s = Math.floor(r / 1000);
-    if (d > 0) parts.push(`${d}天`);
-    if (h > 0 || d > 0) parts.push(`${h}时`);
-    if (m > 0 || h > 0 || d > 0) parts.push(`${m}分`);
-    parts.push(`${s}秒`);
     // 按剩余分钟分级（不足 1 分钟按 0 处理归为红色）
     const mins = Math.max(0, Math.floor(remain / 60000));
     return {
-      text: parts.join(" "),
+      text: fmtCountdown(remain),
       cls: minuteLevelCls(mins),
       progress: 1 - progressBetween(prevTs, next.getTime(), now),
       targetLabel: "Cron"
@@ -953,18 +931,20 @@ function fmtDate(ts) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-// 剩余毫秒 -> "x天 x时 x分 x秒"（用于纪念日/固定日/倒数日统一文本）
+// 剩余毫秒 -> "xY xD xH xM xS"（英文缩写，统一计时器文本）
 function fmtCountdown(remain) {
   let r = Math.max(0, remain);
+  const y = Math.floor(r / unitMs("year")); r -= y * unitMs("year");
   const d = Math.floor(r / unitMs("day")); r -= d * unitMs("day");
   const h = Math.floor(r / unitMs("hour")); r -= h * unitMs("hour");
   const m = Math.floor(r / unitMs("minute")); r -= m * unitMs("minute");
   const s = Math.floor(r / 1000);
   const parts = [];
-  if (d > 0) parts.push(`${d}天`);
-  if (h > 0 || d > 0) parts.push(`${h}时`);
-  if (m > 0 || h > 0 || d > 0) parts.push(`${m}分`);
-  parts.push(`${s}秒`);
+  if (y > 0) parts.push(`${y}Y`);
+  if (d > 0 || y > 0) parts.push(`${d}D`);
+  if (h > 0 || d > 0 || y > 0) parts.push(`${h}H`);
+  if (m > 0 || h > 0 || d > 0 || y > 0) parts.push(`${m}M`);
+  parts.push(`${s}S`);
   return parts.join(" ");
 }
 
