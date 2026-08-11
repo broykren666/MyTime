@@ -1304,6 +1304,10 @@ function renderMiniCalendar() {
   const elYearText = document.getElementById("mcYearText");
   const elDate = document.getElementById("mcDate");
   const elLunar = document.getElementById("mcLunar");
+  const elAlmanac = document.getElementById("mcAlmanac");
+  const elPengzu = document.getElementById("mcPengzu");
+  const elMeta = document.getElementById("mcMeta");
+  const elPosition = document.getElementById("mcPosition");
   const elEvents = document.getElementById("mcEvents");
   const elHoliday = document.getElementById("mcHoliday");
   const elHandleTitle = document.getElementById("mcHandleTitle");
@@ -1318,6 +1322,51 @@ function renderMiniCalendar() {
   if (elYearText) elYearText.textContent = `${y}年`;
   elDate.textContent = `${m}月${d}日 ${week}`;
   elLunar.textContent = `${lunar.getYearInGanZhi()}${lunar.getYearShengXiao()}年 · ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}`;
+
+  // 黄历：宜 / 忌
+  if (elAlmanac) {
+    const yi = lunar.getDayYi();
+    const ji = lunar.getDayJi();
+    const yiText = (yi && yi.length) ? yi.join(" ") : "无";
+    const jiText = (ji && ji.length) ? ji.join(" ") : "无";
+    elAlmanac.innerHTML =
+      `<span class="mc-almanac__label mc-almanac__label--yi">宜</span>` +
+      `<span class="mc-almanac__val">${yiText}</span>` +
+      `<span class="mc-almanac__label mc-almanac__label--ji">忌</span>` +
+      `<span class="mc-almanac__val">${jiText}</span>`;
+  }
+
+  // 彭祖百忌
+  if (elPengzu) {
+    const pg = [lunar.getPengZuGan(), lunar.getPengZuZhi()].filter(Boolean).join("　");
+    elPengzu.innerHTML = `<span class="mc-pengzu__label">彭祖百忌</span><span class="mc-pengzu__val">${pg}</span>`;
+  }
+
+  // 干支 / 二十八宿 / 建星 / 星座
+  if (elMeta) {
+    const ganzhi = `${lunar.getYearInGanZhi()}·${lunar.getMonthInGanZhi()}·${lunar.getDayInGanZhi()}`;
+    const xiu = lunar.getXiu ? lunar.getXiu() : "";
+    const zhiXing = lunar.getZhiXing ? lunar.getZhiXing() : "";
+    const xingzuo = solar.getXingZuo();
+    elMeta.innerHTML =
+      `<span class="mc-meta__item">干支 <b>${ganzhi}</b></span>` +
+      `<span class="mc-meta__item">${xiu}${zhiXing ? "·" + zhiXing : ""}</span>` +
+      `<span class="mc-meta__item">${xingzuo}座</span>`;
+  }
+
+  // 吉神方位：喜神 / 财神 / 福神 / 阳贵 / 阴贵
+  if (elPosition) {
+    const items = [
+      ["喜神", lunar.getDayPositionXiDesc()],
+      ["财神", lunar.getDayPositionCai && lunar.getDayPositionCai()],
+      ["福神", lunar.getDayPositionFu && lunar.getDayPositionFu()],
+      ["阳贵", lunar.getDayPositionYangGui && lunar.getDayPositionYangGui()],
+      ["阴贵", lunar.getDayPositionYinGui && lunar.getDayPositionYinGui()],
+    ].filter(it => it[1]);
+    elPosition.innerHTML = items
+      .map(([k, v]) => `<span class="mc-position__item"><i>${k}</i>${v}</span>`)
+      .join("");
+  }
 
   const events = buildMiniCalendarEvents(now);
   elEvents.innerHTML = "";
