@@ -1356,7 +1356,7 @@ function renderMiniCalendar() {
 
   // 干支 / 二十八宿 / 建星（标签独占一行，详情在下一行）
   if (elMeta) {
-    const ganzhi = `${lunar.getYearInGanZhi()}·${lunar.getMonthInGanZhi()}·${lunar.getDayInGanZhi()}`;
+    const ganzhi = `${lunar.getYearInGanZhi()}·${lunar.getMonthInGanZhi()}·${lunar.getDayInGanZhi()}·${lunar.getTimeInGanZhi()}`;
     const xiu = lunar.getXiu ? lunar.getXiu() : "";
     const zhiXing = lunar.getZhiXing ? lunar.getZhiXing() : "";
     const tail = [xiu, zhiXing].filter(Boolean).join("·");
