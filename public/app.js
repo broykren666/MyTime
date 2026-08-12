@@ -17,7 +17,7 @@ function todayKey(now = new Date()) {
 }
 
 /* 农历显示名称 */
-const LUNAR_MONTH_NAMES = ['', '正月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','腊月'];
+const LUNAR_MONTH_NAMES = ['', '正月','二月','三月','四月','五月','六月','七月','八月','九月','十月','冬月','腊月'];
 const LUNAR_DAY_NAMES = ['','初一','初二','初三','初四','初五','初六','初七','初八','初九','初十',
   '十一','十二','十三','十四','十五','十六','十七','十八','十九','二十',
   '廿一','廿二','廿三','廿四','廿五','廿六','廿七','廿八','廿九','三十'];
@@ -351,7 +351,7 @@ function formatBirthdayTime(task) {
     const dayName = LUNAR_DAY_NAMES[task.lunarDay] || "";
     const leap = task.lunarLeap ? "闰" : "";
     const refYear = getReferenceYear(task);
-    return refYear ? `农历${leap}${monthName}${dayName}（${refYear}年）` : `农历${leap}${monthName}${dayName}`;
+    return refYear ? `${leap}${monthName}${dayName}（${refYear}年）` : `${leap}${monthName}${dayName}`;
   }
   return task.birthdayValue || "—";
 }
@@ -361,7 +361,7 @@ function formatMemorialTime(task) {
     const monthName = LUNAR_MONTH_NAMES[task.lunarMonth] || "";
     const dayName = LUNAR_DAY_NAMES[task.lunarDay] || "";
     const leap = task.lunarLeap ? "闰" : "";
-    return `农历${leap}${monthName}${dayName}`;
+    return `${leap}${monthName}${dayName}`;
   }
   return task.memorialValue || "—";
 }
@@ -494,7 +494,7 @@ function initLunarSelects() {
       }
     }
   }
-  // 日期选项：1-30
+  // 日期选项：先填 1-30，随后由 refreshLunarDays 按实际月天数裁剪
   for (const sel of [els.birthdayLunarDay, els.memorialLunarDay]) {
     if (sel.options.length === 0) {
       for (let i = 1; i <= 30; i++) {
@@ -502,6 +502,46 @@ function initLunarSelects() {
       }
     }
   }
+  // 依据当前选择的年月（含闰月）实时调整日子范围
+  refreshLunarDays("birthday");
+  refreshLunarDays("memorial");
+}
+
+/* 根据所选农历年/月/闰月，重算该月实际天数，并裁剪日子下拉框选项。
+ * 农历小月为 29 天、大月 30 天；所选月不存在（如闰月当年无此闰月）则回退普通月。 */
+function refreshLunarDays(prefix) {
+  const yearSel = els[prefix + "LunarYear"];
+  const monthSel = els[prefix + "LunarMonth"];
+  const daySel = els[prefix + "LunarDay"];
+  const leap = els[prefix + "LunarLeap"].classList.contains("is-active");
+  if (!yearSel || !monthSel || !daySel) return;
+  const y = parseInt(yearSel.value, 10) || new Date().getFullYear();
+  const m = parseInt(monthSel.value, 10) || 1;
+
+  let dayCount = 30;
+  try {
+    const ly = LunarYear.fromYear(y);
+    if (leap && ly.getLeapMonth() === m) {
+      // 选中闰月且该年确有此闰月
+      const months = ly.getMonths();
+      const lm = months.find(mo => mo.getYear() === y && mo.getMonth() === m && mo.isLeap());
+      dayCount = lm ? lm.getDayCount() : 30;
+    } else {
+      const lm = ly.getMonth(m);
+      dayCount = lm ? lm.getDayCount() : 30;
+    }
+  } catch (e) {
+    dayCount = 30;
+  }
+
+  const prevDay = parseInt(daySel.value, 10) || 1;
+  // 重建日子选项（仅保留合法范围）
+  daySel.options.length = 0;
+  for (let i = 1; i <= dayCount; i++) {
+    daySel.add(new Option(LUNAR_DAY_NAMES[i], i));
+  }
+  // 保持原选择（若超出范围则取最大合法值）
+  daySel.value = String(Math.min(prevDay, dayCount));
 }
 
 /* 切换公历/农历输入面板 */
@@ -919,12 +959,19 @@ function computeTimer(task, now) {
   if (task.type === "birthday") {
     // 农历纪念日
     if (task.calendarType === "lunar") {
-      const nowDate = new Date(now);
       const nextTs = nextLunarOccurrence(task.lunarMonth, task.lunarDay, task.lunarLeap, now);
       if (!nextTs) return { text: "日期不合法", cls: "is-over", progress: null, targetLabel: "" };
       const diffDays = Math.round((nextTs - startOfDay(now)) / (24 * 3600 * 1000));
       const refYear = getReferenceYear(task);
-      const yLabel = refYear ? `${nowDate.getFullYear() - refYear}年 | ` : "";
+      // 纪念日「X年」= 已过去的农历周年数。
+      // 用 nextTs 对应的【农历年份】减去基准年再减 1（nextTs 是下一个还没到的周年）。
+      // 若用公历年份，腊月等跨公历年的情况会虚增一年（如 2026腊月→公历2027，误显 1年）。
+      let yLabel = "";
+      if (refYear) {
+        const nextLunarYear = Lunar.fromDate(new Date(nextTs)).getYear();
+        const yearsPassed = nextLunarYear - refYear - 1;
+        if (yearsPassed > 0) yLabel = `${yearsPassed}年 | `;
+      }
       if (diffDays === 0) return { text: `${yLabel}🎉纪念日快乐`, cls: "is-red", progress: 0, targetLabel: fmtDate(nextTs) };
       const progress = 1 - progressBetween(prevAnnualOccurrence(nextTs, now), nextTs, now);
       return {
@@ -1029,15 +1076,20 @@ function computeTimer(task, now) {
   // 倒数日（固定目标日期，可过去可未来）
   if (task.type === "memorial") {
     let target = new Date((task.memorialValue || todayStr()) + "T00:00:00").getTime();
-    // 农历倒数日：按当前/下一年转换
+    // 农历倒数日：优先倒数到用户设置的农历年份；未设置时自动取下一个发生点
     if (task.calendarType === "lunar") {
       const nowDate = new Date(now);
-      const thisYearSolar = solarFromLunar(nowDate.getFullYear(), task.lunarMonth, task.lunarDay, task.lunarLeap);
-      if (thisYearSolar && thisYearSolar.getTime() >= startOfDay(now)) {
-        target = thisYearSolar.getTime();
+      if (task.lunarYear && !isNaN(parseInt(task.lunarYear, 10))) {
+        const ySolar = solarFromLunar(parseInt(task.lunarYear, 10), task.lunarMonth, task.lunarDay, task.lunarLeap);
+        if (ySolar) target = ySolar.getTime();
       } else {
-        const nextYearSolar = solarFromLunar(nowDate.getFullYear() + 1, task.lunarMonth, task.lunarDay, task.lunarLeap);
-        target = nextYearSolar ? nextYearSolar.getTime() : target;
+        const thisYearSolar = solarFromLunar(nowDate.getFullYear(), task.lunarMonth, task.lunarDay, task.lunarLeap);
+        if (thisYearSolar && thisYearSolar.getTime() >= startOfDay(now)) {
+          target = thisYearSolar.getTime();
+        } else {
+          const nextYearSolar = solarFromLunar(nowDate.getFullYear() + 1, task.lunarMonth, task.lunarDay, task.lunarLeap);
+          target = nextYearSolar ? nextYearSolar.getTime() : target;
+        }
       }
     }
     const diff = target - now;
@@ -1655,12 +1707,13 @@ function refreshLunarRefDate(prefix) {
 }
 
 for (const prefix of ["birthday", "memorial"]) {
-  els[prefix + "LunarYear"].addEventListener("change", () => refreshLunarRefDate(prefix));
-  els[prefix + "LunarMonth"].addEventListener("change", () => refreshLunarRefDate(prefix));
+  els[prefix + "LunarYear"].addEventListener("change", () => { refreshLunarRefDate(prefix); refreshLunarDays(prefix); });
+  els[prefix + "LunarMonth"].addEventListener("change", () => { refreshLunarRefDate(prefix); refreshLunarDays(prefix); });
   els[prefix + "LunarDay"].addEventListener("change", () => refreshLunarRefDate(prefix));
   els[prefix + "LunarLeap"].addEventListener("click", () => {
     els[prefix + "LunarLeap"].classList.toggle("is-active");
     refreshLunarRefDate(prefix);
+    refreshLunarDays(prefix);
   });
 }
 
