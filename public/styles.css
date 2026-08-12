@@ -97,7 +97,15 @@ body {
 .db-icon { font-size: 15px; line-height: 1; }
 
 /* ===== 数据管理弹窗 ===== */
-.data-hint { font-size: 13px; color: var(--text-soft); }
+.data-notice {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: var(--text-soft);
+  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+.notice-icon { font-size: 15px; line-height: 1; }
 #dataModal .modal-body .btn { width: 100%; justify-content: center; }
 #dataModal .import-row .btn { width: auto; }
 .import-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -327,6 +335,8 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 .modal-body { display: flex; flex-direction: column; gap: 16px; }
 .field { display: flex; flex-direction: column; gap: 7px; }
 .field-label { font-size: 13px; font-weight: 500; color: var(--text-soft); }
+.label-icon { font-size: 13px; line-height: 1; }
+.divider { height: 1px; background: var(--border); margin: 4px 0 2px; }
 .input {
   width: 100%; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
   padding: 10px 12px; font-size: 14px; font-family: inherit; color: var(--text);
@@ -368,7 +378,14 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 .countdown-row { display: flex; gap: 10px; align-items: stretch; }
 .cd-value { flex: 0 0 110px; }
 .fixedday-value { width: 100%; flex: none; }
-.type-lock-tip { font-size: 12px; color: var(--warning); margin-top: 2px; }
+.type-lock-notice {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12.5px; color: var(--warning);
+  background: rgba(245, 158, 11, 0.10);
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px; margin-top: 2px;
+}
 
 /* ===== Cron 信息栏 ===== */
 .cron-info {

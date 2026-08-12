@@ -135,7 +135,10 @@
             <button type="button" class="seg-item" data-type="fixedday">固定日</button>
             <button type="button" class="seg-item" data-type="cron">Cron</button>
           </div>
-          <p id="typeLockTip" class="type-lock-tip" hidden>修改模式下任务类型已锁定，如需变更请删除后重新添加</p>
+          <div id="typeLockTip" class="type-lock-notice" hidden>
+            <span class="notice-icon">🔒</span>
+            <span>修改模式下任务类型已锁定</span>
+          </div>
         </div>
 
         <!-- 倒计时类型输入区 -->
@@ -251,15 +254,19 @@
       </div>
 
       <div class="modal-body">
-        <p class="data-hint">当前本地共 <span id="dataCount">0</span> 条数据</p>
-
-        <div class="field">
-          <span class="field-label">导出</span>
-          <button id="exportBtn" class="btn btn-primary" type="button">导出JSON文件</button>
+        <div class="data-notice" role="status">
+          <span class="notice-icon">ℹ️</span>
+          <span>当前本地共 <span id="dataCount">0</span> 条数据</span>
         </div>
 
         <div class="field">
-          <span class="field-label">导入（将覆盖当前全部数据）</span>
+          <span class="field-label"><span class="label-icon">⬆️</span>导出</span>
+          <button id="exportBtn" class="btn btn-primary" type="button">导出JSON文件</button>
+          <div class="divider"></div>
+        </div>
+
+        <div class="field">
+          <span class="field-label"><span class="label-icon">⬇️</span>导入（将覆盖当前全部数据）</span>
           <div class="import-row">
             <input type="file" id="importInput" accept="application/json,.json" class="input" hidden />
             <button id="importPickBtn" class="btn btn-ghost" type="button">选择文件</button>
