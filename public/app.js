@@ -1821,6 +1821,14 @@ function initMcToggles() {
       applyMcCollapse();
     });
   }
+  // head 中为避免刷新闪现而临时注入的折叠样式已完成使命，移除它，
+  // 改由 applyMcCollapse 通过 is-collapsed class 控制显隐，
+  // 否则点击展开时会被该样式（#mcBody{display:none}）覆盖而无法展开
+  try {
+    const tmp = document.getElementById("mc-collapse-restore");
+    if (tmp) tmp.remove();
+  } catch (e) {}
+
   applyMcCollapse();
 }
 
