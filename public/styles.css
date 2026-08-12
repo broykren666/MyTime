@@ -479,6 +479,23 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   .countdown-row { flex-direction: column; }
   .cd-value { flex: 1; }
 
+  /* ---- 任务类型切换：移动端改为横向滚动，便于扩展更多类型 ---- */
+  #typeSeg {
+    display: flex;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;        /* Firefox 隐藏滚动条 */
+    scroll-snap-type: x proximity;
+    padding-bottom: 2px;           /* 避免阴影被裁切 */
+  }
+  #typeSeg::-webkit-scrollbar { display: none; }  /* WebKit 隐藏滚动条 */
+  #typeSeg .seg-item {
+    flex: 0 0 auto;               /* 不收缩、不换行，保持原尺寸 */
+    scroll-snap-align: start;
+  }
+
   /* ---- 解除桌面端强加的高度/滚动限制，修正地址栏遮挡 ---- */
   body {
     height: auto;
