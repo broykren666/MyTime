@@ -1888,7 +1888,25 @@ function renderDailyQuote() {
     .catch(() => { if (!done) { done = true; clearTimeout(timer); useFallback(); } });
 }
 
+/* ---------- 启动前预热通知状态 ----------
+ * 页面打开/刷新时 notifiedIds、cronLastNext 均为空（内存态）。
+ * 若此时倒计时已结束、或 cron 在页面关闭期间已越过触发边界，
+ * 首次 updateTimers 会误判为「刚结束/刚触发」并重复发通知。
+ * 故在首次渲染前预热：已结束的倒计时标记为已通知，cron 预填下次触发指针。 */
+function initNotifyState() {
+  const now = Date.now();
+  tasks.forEach(task => {
+    if (task.type === "countdown") {
+      const { cls } = computeTimer(task, now);
+      if (cls === "is-done") notifiedIds.add(task.id); // 已结束：标记已通知，避免刷新后重复提醒
+    } else if (task.type === "cron") {
+      computeTimer(task, now); // 预热 cronLastNext，使首次边界检测不会误判为刚触发
+    }
+  });
+}
+
 /* ---------- 启动 ---------- */
+initNotifyState();
 renderList();
 renderDailyQuote();
 renderMiniCalendar();
