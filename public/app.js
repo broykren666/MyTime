@@ -1017,6 +1017,16 @@ function submitTask(e) {
   const name = els.name.value.trim();
   if (!name) return;
 
+  // 同名任务检测（忽略首尾空白与大小写）
+  const dup = tasks.find(t =>
+    t.id !== editingId && t.name.trim().toLowerCase() === name.toLowerCase()
+  );
+  if (dup) {
+    alert(`已存在同名任务「${dup.name}」，请修改名称后再提交`);
+    els.name.focus();
+    return;
+  }
+
   const base = {
     name,
     type: formType,
