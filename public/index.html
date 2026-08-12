@@ -15,6 +15,37 @@
         document.documentElement.dataset.theme = t;
       } catch (e) {}
     })();
+
+    // 提前恢复小日历位置，避免刷新时先在默认位置闪一下
+    (function () {
+      try {
+        var raw = localStorage.getItem("mytime_mini_calendar_pos");
+        if (raw) {
+          var p = JSON.parse(raw);
+          if (p && typeof p.x === "number" && typeof p.y === "number") {
+            var s = ".mini-calendar{left:" + p.x + "px;top:" + p.y + "px;right:auto;}";
+            var style = document.createElement("style");
+            style.id = "mc-pos-restore";
+            style.textContent = s;
+            document.documentElement.appendChild(style);
+          }
+        }
+      } catch (e) {}
+    })();
+
+    // 提前恢复小日历「今日信息」折叠态，避免刷新时先展开闪一下
+    (function () {
+      try {
+        if (localStorage.getItem("mytime_mc_all_collapsed") === "1") {
+          var style = document.createElement("style");
+          style.id = "mc-collapse-restore";
+          style.textContent = ".mini-calendar #mcBody{display:none;}";
+          document.documentElement.appendChild(style);
+          // 标记，供 JS 在初始化时同步 class
+          document.documentElement.dataset.mcAllCollapsed = "1";
+        }
+      } catch (e) {}
+    })();
   </script>
 </head>
 <body>
@@ -22,24 +53,24 @@
     <!-- 顶部标题栏 -->
     <header class="topbar">
       <div class="brand">
-        <span class="brand-dot"></span>
-        <h1>MyTime 任务计时器</h1>
+        <span class="brand-dot">🕗</span>
+        <h1>MyTime</h1>
       </div>
       <div class="top-actions">
         <button id="themeBtn" class="btn btn-ghost" type="button" title="切换主题" aria-label="切换主题">
           <span id="themeIcon">🌙</span>
         </button>
         <button id="addBtn" class="btn btn-primary">
-          <span class="plus">+</span> 添加任务
+          <span class="plus">+</span> 任务
         </button>
         <button id="dataBtn" class="btn btn-ghost" type="button" title="数据管理">
-          <span class="db-icon">🗄️</span> 数据管理
+          <span class="db-icon">🗄️</span> 数据
         </button>
       </div>
     </header>
 
-    <!-- 顶部信息容器：每日一言 -->
-    <section class="infobar" aria-label="每日一言">
+    <!-- 顶部信息容器：每日一言（仅在桌面端显示，手机端隐藏） -->
+    <section class="infobar infobar--desktop" aria-label="每日一言">
       <!-- 每日一言 -->
       <div class="daily-quote" id="dailyQuote">
         <span class="dq-text" id="dqText"></span>
@@ -135,7 +166,10 @@
             <button type="button" class="seg-item" data-type="fixedday">固定日</button>
             <button type="button" class="seg-item" data-type="cron">Cron</button>
           </div>
-          <p id="typeLockTip" class="type-lock-tip" hidden>修改模式下任务类型已锁定，如需变更请删除后重新添加</p>
+          <div id="typeLockTip" class="type-lock-notice" hidden>
+            <span class="notice-icon">🔒</span>
+            <span>修改模式下任务类型已锁定</span>
+          </div>
         </div>
 
         <!-- 倒计时类型输入区 -->
@@ -251,20 +285,24 @@
       </div>
 
       <div class="modal-body">
-        <p class="data-hint">当前本地共 <span id="dataCount">0</span> 条数据</p>
-
-        <div class="field">
-          <span class="field-label">导出</span>
-          <button id="exportBtn" class="btn btn-primary" type="button">导出JSON文件</button>
+        <div class="data-notice" role="status">
+          <span class="notice-icon">ℹ️</span>
+          <span>当前本地共 <span id="dataCount">0</span> 条数据</span>
         </div>
 
         <div class="field">
-          <span class="field-label">导入（将覆盖当前全部数据）</span>
-          <div class="import-row">
+          <span class="field-label"><span class="label-icon">⬆️</span>导出</span>
+          <button id="exportBtn" class="btn btn-primary" type="button">导出JSON文件</button>
+          <div class="divider"></div>
+        </div>
+
+        <div class="field">
+          <div class="field-row">
+            <span class="field-label"><span class="label-icon">⬇️</span>导入（将覆盖当前全部数据）</span>
             <input type="file" id="importInput" accept="application/json,.json" class="input" hidden />
             <button id="importPickBtn" class="btn btn-ghost" type="button">选择文件</button>
-            <span id="importFileName" class="import-file-name"></span>
           </div>
+          <span id="importFileName" class="import-file-name"></span>
           <button id="importBtn" class="btn btn-primary" type="button">导入并覆盖</button>
         </div>
 
@@ -276,6 +314,16 @@
   <script src="vendor/croner.umd.min.js" defer></script>
   <script src="vendor/lunar.js" defer></script>
   <script src="vendor/holidays.js" defer></script>
+  <!-- 移动端长按任务卡片弹出的底部操作栏 -->
+  <div class="action-sheet__overlay" id="actionSheetOverlay"></div>
+  <div class="action-sheet" id="actionSheet" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="action-sheet__title" id="actionSheetTitle"></div>
+    <button type="button" class="action-sheet__btn action-sheet__btn--dup" id="actionDupBtn">复制</button>
+    <button type="button" class="action-sheet__btn action-sheet__btn--edit" id="actionEditBtn">修改</button>
+    <button type="button" class="action-sheet__btn action-sheet__btn--del" id="actionDelBtn">删除</button>
+    <button type="button" class="action-sheet__btn action-sheet__btn--cancel" id="actionCancelBtn">取消</button>
+  </div>
+
   <script src="app.js" defer></script>
 </body>
 </html>

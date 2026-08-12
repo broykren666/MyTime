@@ -254,10 +254,11 @@ function renderList() {
     const ops = document.createElement("div");
     ops.className = "ops";
 
+    const dup = opBtn("复制", "复制为副本", false, () => duplicateTask(task.id));
     const edit = opBtn("修改", "修改", false, () => openModal(task.id));
     const del = opBtn("删除", "删除", false, () => removeTask(task.id), true);
 
-    ops.append(edit, del);
+    ops.append(dup, edit, del);
     tdOps.appendChild(ops);
 
     tr.append(tdDrag, tdIdx, tdName, tdTime, tdTimer, tdOps);
@@ -266,6 +267,7 @@ function renderList() {
 
   els.list.replaceChildren(frag);
   bindDragSort();
+  bindTouchSort();
   updateTimers();
   revealTable();
 }
@@ -324,6 +326,220 @@ function moveTask(fromId, toId) {
   renderList();
 }
 
+/* ====================================================================
+ * 移动端触摸手势（仅 ≤560px 生效，PC 端直接跳过，零影响）
+ * - 长按卡片 ~380ms → 底部弹出操作栏（修改 / 删除）
+ * - 长按后继续拖动 → 卡片排序，与「纵向滑动滚动」严格区分
+ * ================================================================== */
+const isMobileView = () => window.matchMedia("(max-width: 560px)").matches;
+
+// ---- 底部操作栏 ----
+const actionSheet = document.getElementById("actionSheet");
+const actionSheetOverlay = document.getElementById("actionSheetOverlay");
+const actionSheetTitle = document.getElementById("actionSheetTitle");
+const actionEditBtn = document.getElementById("actionEditBtn");
+const actionDelBtn = document.getElementById("actionDelBtn");
+const actionCancelBtn = document.getElementById("actionCancelBtn");
+const actionDupBtn = document.getElementById("actionDupBtn");
+let actionTargetId = null;
+
+function showActionSheet(taskId) {
+  const task = tasks.find(t => t.id === taskId);
+  if (!task) return;
+  actionTargetId = taskId;
+  actionSheetTitle.textContent = task.name;
+  actionSheet.classList.add("is-open");
+  actionSheetOverlay.classList.add("is-open");
+  actionSheet.setAttribute("aria-hidden", "false");
+}
+function hideActionSheet() {
+  actionTargetId = null;
+  actionSheet.classList.remove("is-open");
+  actionSheetOverlay.classList.remove("is-open");
+  actionSheet.setAttribute("aria-hidden", "true");
+}
+actionEditBtn.addEventListener("click", () => {
+  const id = actionTargetId;
+  hideActionSheet();
+  if (id) openModal(id);
+});
+actionDelBtn.addEventListener("click", () => {
+  const id = actionTargetId;
+  hideActionSheet();
+  if (id) removeTask(id);
+});
+actionDupBtn.addEventListener("click", () => {
+  const id = actionTargetId;
+  hideActionSheet();
+  if (id) duplicateTask(id);
+});
+actionCancelBtn.addEventListener("click", hideActionSheet);
+actionSheetOverlay.addEventListener("click", hideActionSheet);
+
+let touchState = null; // 当前手势状态
+const LONG_PRESS_MS = 380;       // 长按判定时长
+const MOVE_CANCEL_PX = 10;       // 超时前移动超过此值 → 判定为滑动滚动
+const DRAG_THRESHOLD_PX = 8;     // 长按后移动超过此值 → 进入拖动排序
+
+function bindTouchSort() {
+  if (!isMobileView()) return; // 桌面端跳过，保持原鼠标拖放逻辑
+
+  const rows = els.list.querySelectorAll("tr");
+  rows.forEach(row => {
+    row.addEventListener("touchstart", onTouchStart, { passive: false });
+    row.addEventListener("touchmove", onTouchMove, { passive: false });
+    row.addEventListener("touchend", onTouchEnd, { passive: false });
+    row.addEventListener("touchcancel", onTouchEnd, { passive: false });
+  });
+}
+
+function onTouchStart(e) {
+  if (!isMobileView() || touchState) return;
+  const tr = e.currentTarget;
+  const touch = e.touches[0];
+  touchState = {
+    tr,
+    id: tr.dataset.id,
+    startX: touch.clientX,
+    startY: touch.clientY,
+    grabOffsetY: 0,     // 手指距卡片顶的距离（进入拖动时记录，跟手用）
+    curTranslate: 0,    // 当前累计跟手位移
+    longFired: false,   // 已进入「长按待定」态（仅标记，不弹菜单）
+    dragging: false,
+    lastX: touch.clientX,
+    lastY: touch.clientY,
+    timer: null,
+  };
+  // 长按计时器：到点且手指基本未动 → 进入「长按待定」态（仅标记，不直接弹菜单）
+  tr.classList.add("is-pressing"); // 按压反馈（JS 控制，关闭菜单后可可靠清除，避免原生高亮卡灰）
+  touchState.timer = setTimeout(() => {
+    if (!touchState) return;
+    const dx = Math.abs(touchState.lastX - touchState.startX);
+    const dy = Math.abs(touchState.lastY - touchState.startY);
+    if (dx < MOVE_CANCEL_PX && dy < MOVE_CANCEL_PX) {
+      touchState.longFired = true;
+      if (navigator.vibrate) navigator.vibrate(15); // 震动反馈：已进入长按态
+    }
+  }, LONG_PRESS_MS);
+}
+
+function onTouchMove(e) {
+  if (!touchState) return;
+  const touch = e.touches[0];
+  const dx = Math.abs(touch.clientX - touchState.startX);
+  const dy = Math.abs(touch.clientY - touchState.startY);
+  touchState.lastX = touch.clientX;
+  touchState.lastY = touch.clientY;
+
+  if (!touchState.longFired) {
+    // 长按计时器到点前，若纵向位移过大 → 判定为滑动滚动，释放手势
+    if (dy > MOVE_CANCEL_PX && dy > dx) {
+      clearTimeout(touchState.timer);
+      touchState.tr.classList.remove("is-pressing");
+      touchState = null;
+    }
+    return; // 未进入长按态，不拦截，浏览器正常滚动
+  }
+
+  // 长按待定态：移动超过阈值 → 进入拖动排序（绝不弹菜单）
+  if (!touchState.dragging && (dx > DRAG_THRESHOLD_PX || dy > DRAG_THRESHOLD_PX)) {
+    touchState.dragging = true;
+    touchState.tr.classList.add("is-dragging-mobile");
+    // 记录手指距卡片顶的偏移，使抓取点固定跟随手指
+    touchState.grabOffsetY = touchState.startY - touchState.tr.getBoundingClientRect().top;
+    touchState.curTranslate = 0;
+  }
+  if (touchState.dragging) {
+    e.preventDefault(); // 阻止页面滚动，进入拖动排序
+    // 先更新占位（DOM 插入位置）
+    updateDragPosition(touchState.tr, touch.clientY);
+    // 每帧把卡片视觉顶钉在「手指Y − 抓取偏移」，绝对跟手，不依赖占位基准
+    const curVisualTop = touchState.tr.getBoundingClientRect().top;
+    const targetTop = touch.clientY - touchState.grabOffsetY;
+    touchState.curTranslate += (targetTop - curVisualTop);
+    touchState.tr.style.transform = `translateY(${touchState.curTranslate}px)`;
+  }
+}
+
+function onTouchEnd() {
+  if (!touchState) return;
+  clearTimeout(touchState.timer);
+  const st = touchState;
+  st.tr.classList.remove("is-pressing");
+  touchState = null;
+  if (st.dragging) {
+    st.tr.classList.add("dropping");
+    st.tr.style.transform = ""; // 平滑回弹到最终占位
+    const tr = st.tr;
+    // 回弹动画结束后提交，避免瞬间跳变
+    setTimeout(() => {
+      tr.classList.remove("is-dragging-mobile", "dropping");
+      tr.style.transform = "";
+      commitDrag(tr);
+    }, 220);
+  } else if (st.longFired) {
+    // 长按待定态下松手且未拖动 → 视为长按点按，弹出操作菜单
+    showActionSheet(st.id);
+  }
+}
+
+// 根据手指 Y 与各卡片中线比较，实时调整插入位置（带 FLIP 平滑过渡）
+function updateDragPosition(dragTr, y) {
+  const others = Array.from(els.list.querySelectorAll("tr")).filter(r => r !== dragTr);
+  // 计算目标插入点
+  let target = null;
+  for (const r of others) {
+    const rect = r.getBoundingClientRect();
+    const mid = rect.top + rect.height / 2;
+    if (y < mid) { target = r; break; }
+  }
+  // 仅当插入锚点真正跨过边界时才重排 + 播动画，避免高频 touchmove 打断过渡（防止"瞬间弹过去"）
+  const changed = target
+    ? dragTr.nextSibling !== target
+    : els.list.lastElementChild !== dragTr;
+  if (!changed) return;
+
+  // FLIP - First：记录移动前其他行位置
+  const firstTops = new Map();
+  for (const r of others) firstTops.set(r, r.getBoundingClientRect().top);
+
+  // 移动 DOM（仅在此刻）
+  if (target) els.list.insertBefore(dragTr, target);
+  else els.list.appendChild(dragTr);
+
+  // FLIP - Invert/Play：让其他行从旧位平滑滑入新位
+  for (const r of others) {
+    const dy = firstTops.get(r) - r.getBoundingClientRect().top;
+    if (!dy) continue;
+    if (r.classList.contains("sort-anim")) continue; // 过渡进行中不打断，让其自然滑完
+    r.classList.add("sort-anim");
+    r.style.transition = "none";
+    r.style.transform = `translateY(${dy}px)`;
+    void r.offsetWidth; // 强制同步重排，确保反向位移立即生效
+    r.style.transition = "";
+    r.style.transform = "";
+    // 动画结束后清理
+    r.addEventListener("transitionend", function te(e) {
+      if (e.propertyName !== "transform") return;
+      r.removeEventListener("transitionend", te);
+      r.classList.remove("sort-anim");
+      r.style.transform = "";
+    });
+  }
+}
+
+// 提交排序：对比 DOM 顺序与 tasks 顺序，归并重排后持久化
+function commitDrag(dragTr) {
+  const order = Array.from(els.list.querySelectorAll("tr")).map(r => r.dataset.id);
+  const map = new Map(tasks.map(t => [t.id, t]));
+  const next = order.map(id => map.get(id)).filter(Boolean);
+  if (next.length === tasks.length) {
+    tasks = next;
+    saveTasks();
+    renderList();
+  }
+}
+
 function opBtn(label, title, disabled, onClick, danger) {
   const b = document.createElement("button");
   b.className = "op-btn" + (danger ? " danger" : "");
@@ -378,6 +594,21 @@ function removeTask(id) {
   if (!confirm(`确定删除任务「${task.name}」吗？`)) return;
   tasks = tasks.filter(t => t.id !== id);
   notifiedIds.delete(id);
+  saveTasks();
+  renderList();
+}
+
+/* ---------- 复制为副本（插入到原任务下方） ---------- */
+function duplicateTask(id) {
+  const idx = tasks.findIndex(t => t.id === id);
+  if (idx === -1) return;
+  const src = tasks[idx];
+  if (!confirm(`确定复制任务「${src.name}」为副本吗？`)) return;
+  const copy = { ...src, id: genId() };
+  // 副本名称追加「(副本)」，避免触发同名限制
+  copy.name = src.name.replace(/\s*\(副本\)$/, "") + " (副本)";
+  if (copy.createdAt) copy.createdAt = Date.now();
+  tasks.splice(idx + 1, 0, copy);
   saveTasks();
   renderList();
 }
@@ -810,6 +1041,16 @@ function submitTask(e) {
   e.preventDefault();
   const name = els.name.value.trim();
   if (!name) return;
+
+  // 同名任务检测（忽略首尾空白与大小写）
+  const dup = tasks.find(t =>
+    t.id !== editingId && t.name.trim().toLowerCase() === name.toLowerCase()
+  );
+  if (dup) {
+    alert(`已存在同名任务「${dup.name}」，请修改名称后再提交`);
+    els.name.focus();
+    return;
+  }
 
   const base = {
     name,
@@ -1590,12 +1831,16 @@ function initMiniCalendarDrag() {
   const handle = box.querySelector(".mini-calendar__handle");
   if (!handle) return;
 
-  // 恢复上次位置（默认左上角）
+  // 注：位置的「首帧恢复」已提前在 index.html 的 <head> 内联脚本中完成
+  //      （避免刷新时在默认左上角闪一下）。这里把恢复出来的位置同步到内联
+  //      style 上，保证后续拖拽以当前实际坐标为起点。
   try {
-    const saved = JSON.parse(localStorage.getItem(MC_POS_KEY) || "null");
-    if (saved && typeof saved.x === "number" && typeof saved.y === "number") {
-      box.style.left = saved.x + "px";
-      box.style.top = saved.y + "px";
+    const cs = getComputedStyle(box);
+    const curLeft = parseFloat(cs.left);
+    const curTop = parseFloat(cs.top);
+    if (!isNaN(curLeft) && !isNaN(curTop) && cs.left !== "auto" && cs.top !== "auto") {
+      box.style.left = curLeft + "px";
+      box.style.top = curTop + "px";
       box.style.right = "auto";
       box.dataset.dragged = "1";
     }
