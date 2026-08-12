@@ -502,6 +502,11 @@ function initLunarSelects() {
       }
     }
   }
+  // 年份默认选中当前年（否则默认 1900 年，其农历六月为小月29天，会缺失“三十”）
+  const thisYear = String(new Date().getFullYear());
+  for (const sel of [els.birthdayLunarYear, els.memorialLunarYear]) {
+    if ([...sel.options].some(o => o.value === thisYear)) sel.value = thisYear;
+  }
   // 依据当前选择的年月（含闰月）实时调整日子范围
   refreshLunarDays("birthday");
   refreshLunarDays("memorial");
@@ -598,17 +603,16 @@ function solarFromLunar(lunarYear, lunarMonth, lunarDay, lunarLeap) {
 function nextLunarOccurrence(lunarMonth, lunarDay, lunarLeap, nowTs) {
   const now = new Date(nowTs);
   const thisYear = now.getFullYear();
-  // 当年
-  let solar = solarFromLunar(thisYear, lunarMonth, lunarDay, lunarLeap);
-  if (solar && solar.getTime() > startOfDay(nowTs)) {
-    return solar.getTime();
+  const base = startOfDay(nowTs);
+  // 从当年起向后搜索（含当年当天），部分农历月无三十（小月）属正常，
+  // 该年找不到则继续往后数年，直到命中第一个 ≥ 今天 的合法农历日。
+  for (let k = 0; k <= 5; k++) {
+    const solar = solarFromLunar(thisYear + k, lunarMonth, lunarDay, lunarLeap);
+    if (solar && solar.getTime() >= base) {
+      return solar.getTime();
+    }
   }
-  // 明年
-  solar = solarFromLunar(thisYear + 1, lunarMonth, lunarDay, lunarLeap);
-  if (solar) return solar.getTime();
-  // 极端情况回退：再往后一年
-  solar = solarFromLunar(thisYear + 2, lunarMonth, lunarDay, lunarLeap);
-  return solar ? solar.getTime() : null;
+  return null;
 }
 
 /* 获取纪念日基准年份（用于"X年"显示） */
@@ -972,7 +976,11 @@ function computeTimer(task, now) {
         const yearsPassed = nextLunarYear - refYear - 1;
         if (yearsPassed > 0) yLabel = `${yearsPassed}年 | `;
       }
-      if (diffDays === 0) return { text: `${yLabel}🎉纪念日快乐`, cls: "is-red", progress: 0, targetLabel: fmtDate(nextTs) };
+      if (diffDays === 0) {
+        const leapLabel = task.lunarLeap ? "闰" : "";
+        const todayLabel = `${yLabel}${leapLabel}${LUNAR_MONTH_NAMES[task.lunarMonth] || ""}${LUNAR_DAY_NAMES[task.lunarDay] || ""} | 今天`;
+        return { text: todayLabel, cls: "is-red", progress: 0, targetLabel: fmtDate(nextTs) };
+      }
       const progress = 1 - progressBetween(prevAnnualOccurrence(nextTs, now), nextTs, now);
       return {
         text: `${yLabel}${fmtCountdown(nextTs - now)}`,
@@ -987,7 +995,11 @@ function computeTimer(task, now) {
     const yLabel = years >= 1 ? `${Math.floor(years)}年 | ` : "";
     const next = nextBirthday(born, now);
     const nextTs = next.nextTs;
-    if (next.diff === 0) return { text: `${yLabel}🎉纪念日快乐`, cls: "is-red", progress: 0, targetLabel: fmtDate(nextTs) };
+    if (next.diff === 0) {
+      const d = new Date(nextTs);
+      const todayLabel = `${yLabel}${d.getMonth() + 1}月${d.getDate()}日 | 今天`;
+      return { text: todayLabel, cls: "is-red", progress: 0, targetLabel: fmtDate(nextTs) };
+    }
     const progress = 1 - progressBetween(prevAnnualOccurrence(nextTs, now), nextTs, now);
     return {
       text: `${yLabel}${fmtCountdown(nextTs - now)}`,
@@ -1008,7 +1020,7 @@ function computeTimer(task, now) {
     const nextTs = new Date(new Date(now).getFullYear(), best.month - 1, best.date, 0, 0, 0).getTime();
     // 月内周期：起点 = 本月 1 日 0 点，终点 = 目标日 0 点，进度 = 剩余天数占比
     const monthStartTs = new Date(new Date(now).getFullYear(), best.month - 1, 1, 0, 0, 0).getTime();
-    if (best.diff === 0) return { text: `今天就是（${best.month}月${best.date}日）`, cls: "is-red", progress: 0, targetLabel: `${best.month}月${best.date}日` };
+    if (best.diff === 0) return { text: `${best.month}月${best.date}日 | 今天`, cls: "is-red", progress: 0, targetLabel: `${best.month}月${best.date}日` };
     const progress = 1 - progressBetween(monthStartTs, nextTs, now);
     return {
       text: `${best.month}月${best.date}日 | ${fmtCountdown(nextTs - now)}`,
@@ -1094,8 +1106,14 @@ function computeTimer(task, now) {
     }
     const diff = target - now;
     const days = Math.floor(Math.abs(diff) / (24 * 3600 * 1000));
+    // 当天判断：target 与 now 是否为同一天（用日期而非毫秒差，避免目标在今日凌晨已过时误判为过期）
+    const isSameDay = startOfDay(target) === startOfDay(now);
+    if (isSameDay) {
+      const d = new Date(target);
+      const todayLabel = `${d.getMonth() + 1}月${d.getDate()}日 | 今天`;
+      return { text: todayLabel, cls: "is-red", progress: 0, targetLabel: fmtDate(target) };
+    }
     if (diff >= 0) {
-      if (days === 0) return { text: "今天到期", cls: "is-red", progress: 0, targetLabel: fmtDate(target) };
       // 以「一年前到目标日」为一个周期估算进度
       const from = target - unitMs("year", target);
       const progress = 1 - progressBetween(from, target, now);
