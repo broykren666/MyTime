@@ -654,13 +654,22 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   }
   [data-theme="dark"] .action-sheet__btn--cancel { background: #243044; }
 
-  /* 拖动排序中：被拖卡片置顶 + 半透明 + 阴影 */
-  .task-table tr.is-dragging-mobile {
+  /* 拖动排序中：被拖卡片浮起 + 半透明 + 阴影（跟手位移由 JS 控制 transform） */
+  .task-table tbody tr.is-dragging-mobile {
     position: relative;
-    z-index: 5;
-    opacity: .55;
-    box-shadow: var(--shadow-lg);
-    transform: scale(1.02);
+    z-index: 20;
+    opacity: .92;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .32);
+    pointer-events: none;
+    will-change: transform;
+  }
+  /* 释放回弹：平滑归位到最终占位 */
+  .task-table tbody tr.is-dragging-mobile.dropping {
+    transition: transform .3s cubic-bezier(.2, .8, .2, 1);
+  }
+  /* 其他卡片在被挤开/合拢时平滑滑入（FLIP 由 JS 设置 transform） */
+  .task-table tbody tr.sort-anim {
+    transition: transform .34s cubic-bezier(.4, 0, .2, 1);
   }
 }
 
