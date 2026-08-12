@@ -254,10 +254,11 @@ function renderList() {
     const ops = document.createElement("div");
     ops.className = "ops";
 
+    const dup = opBtn("复制", "复制为副本", false, () => duplicateTask(task.id));
     const edit = opBtn("修改", "修改", false, () => openModal(task.id));
     const del = opBtn("删除", "删除", false, () => removeTask(task.id), true);
 
-    ops.append(edit, del);
+    ops.append(dup, edit, del);
     tdOps.appendChild(ops);
 
     tr.append(tdDrag, tdIdx, tdName, tdTime, tdTimer, tdOps);
@@ -339,6 +340,7 @@ const actionSheetTitle = document.getElementById("actionSheetTitle");
 const actionEditBtn = document.getElementById("actionEditBtn");
 const actionDelBtn = document.getElementById("actionDelBtn");
 const actionCancelBtn = document.getElementById("actionCancelBtn");
+const actionDupBtn = document.getElementById("actionDupBtn");
 let actionTargetId = null;
 
 function showActionSheet(taskId) {
@@ -365,6 +367,11 @@ actionDelBtn.addEventListener("click", () => {
   const id = actionTargetId;
   hideActionSheet();
   if (id) removeTask(id);
+});
+actionDupBtn.addEventListener("click", () => {
+  const id = actionTargetId;
+  hideActionSheet();
+  if (id) duplicateTask(id);
 });
 actionCancelBtn.addEventListener("click", hideActionSheet);
 actionSheetOverlay.addEventListener("click", hideActionSheet);
@@ -584,6 +591,21 @@ function removeTask(id) {
   if (!confirm(`确定删除任务「${task.name}」吗？`)) return;
   tasks = tasks.filter(t => t.id !== id);
   notifiedIds.delete(id);
+  saveTasks();
+  renderList();
+}
+
+/* ---------- 复制为副本（插入到原任务下方） ---------- */
+function duplicateTask(id) {
+  const idx = tasks.findIndex(t => t.id === id);
+  if (idx === -1) return;
+  const src = tasks[idx];
+  if (!confirm(`确定复制任务「${src.name}」为副本吗？`)) return;
+  const copy = { ...src, id: genId() };
+  // 副本名称追加「(副本)」，避免触发同名限制
+  copy.name = src.name.replace(/\s*\(副本\)$/, "") + " (副本)";
+  if (copy.createdAt) copy.createdAt = Date.now();
+  tasks.splice(idx + 1, 0, copy);
   saveTasks();
   renderList();
 }

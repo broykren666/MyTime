@@ -206,7 +206,7 @@ tr.dragging { opacity: .45; }
 tr.drag-over td { box-shadow: inset 0 2px 0 var(--primary); }
 tr:hover .drag-handle { color: var(--primary-strong); }
 .col-index { width: 44px; color: var(--text-soft); }
-.col-ops { width: 168px; }
+.col-ops { width: 200px; }
 .idx-badge {
   display: inline-flex; align-items: center; justify-content: center;
   width: 26px; height: 26px; border-radius: 8px;
@@ -682,6 +682,10 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   .action-sheet__btn--del {
     background: rgba(239, 68, 68, 0.12);
     color: var(--danger);
+  }
+  .action-sheet__btn--dup {
+    background: rgba(37, 99, 235, 0.12);
+    color: var(--primary-strong);
   }
   .action-sheet__btn--cancel {
     background: var(--bg);
