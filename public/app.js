@@ -1436,15 +1436,18 @@ function renderMiniCalendar() {
       `</span>`;
   }
 
-  // 干支 / 二十八宿 / 建星（标签独占一行，详情在下一行）
+  // 八字（四柱）：基于系统当前完整时间（含时辰），随分钟刷新
+  // 复用八字计算逻辑替代原「干支」行（二十八宿/建星作为后缀保留）
   if (elMeta) {
-    const ganzhi = `${lunar.getYearInGanZhi()}·${lunar.getMonthInGanZhi()}·${lunar.getDayInGanZhi()}·${lunar.getTimeInGanZhi()}`;
-    const xiu = lunar.getXiu ? lunar.getXiu() : "";
-    const zhiXing = lunar.getZhiXing ? lunar.getZhiXing() : "";
+    const nowLunar = Solar.fromDate(now).getLunar();
+    const ec = nowLunar.getEightChar();
+    const bazi = `${ec.getYear()} ${ec.getMonth()} ${ec.getDay()} ${ec.getTime()}`;
+    const xiu = nowLunar.getXiu ? nowLunar.getXiu() : "";
+    const zhiXing = nowLunar.getZhiXing ? nowLunar.getZhiXing() : "";
     const tail = [xiu, zhiXing].filter(Boolean).join("·");
     elMeta.innerHTML =
-      `<span class="mc-tag">干支</span>` +
-      `<span class="mc-detail-val mc-detail-val--block"><b>${ganzhi}</b>${tail ? "　" + tail : ""}</span>`;
+      `<span class="mc-tag">八字</span>` +
+      `<span class="mc-detail-val mc-detail-val--block"><b>${bazi}</b>${tail ? "　" + tail : ""}</span>`;
   }
 
   // 吉神宜趋 / 凶神宜忌（标签独占一行，详情按 5 列表格布局，各占一格）
@@ -1905,3 +1908,6 @@ setInterval(() => {
     ensureTodayHoliday(todayKey()); // 跨天后获取新一天的节假日状态
   }
 }, 60 * 1000);
+
+// 八字时柱随系统时间（时辰）实时刷新：每分钟重渲染一次小日历
+setInterval(renderMiniCalendar, 60 * 1000);
