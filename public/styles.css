@@ -72,9 +72,7 @@ body {
 }
 .brand { display: flex; align-items: center; gap: 12px; }
 .brand-dot {
-  width: 14px; height: 14px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary), var(--primary-deep));
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.18);
+  font-size: 20px; line-height: 1;
 }
 .topbar h1 { font-size: 20px; font-weight: 600; letter-spacing: 0.2px; }
 .top-actions { display: flex; align-items: center; gap: 10px; }
@@ -693,6 +691,19 @@ tr:hover .drag-handle { color: var(--primary-strong); }
     margin-top: 2px;
   }
   [data-theme="dark"] .action-sheet__btn--cancel { background: #243044; }
+
+  /* 关闭原生点按高亮（避免长按后菜单关闭时卡片卡在灰色高亮态）；
+     按压反馈改用 .is-pressing（由 JS 在 touchstart/touchend 精确控制，可可靠清除）。
+     安卓 Chrome 的高亮/选区作用在 td 与文本节点上，需对全部后代生效，仅设 tr 无效 */
+  .task-table,
+  .task-table * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none; /* 禁用 iOS 长按弹出菜单/选择放大镜 */
+    user-select: none;           /* 禁用长按文本选中（否则选中高亮会残留淡色） */
+    -webkit-user-select: none;
+  }
+  .task-table tbody tr.is-pressing { background: #F0F6FF; }
+  [data-theme="dark"] .task-table tbody tr.is-pressing { background: #25324A; }
 
   /* 拖动排序中：被拖卡片浮起 + 半透明 + 阴影（跟手位移由 JS 控制 transform） */
   .task-table tbody tr.is-dragging-mobile {

@@ -411,6 +411,7 @@ function onTouchStart(e) {
     timer: null,
   };
   // 长按计时器：到点且手指基本未动 → 进入「长按待定」态（仅标记，不直接弹菜单）
+  tr.classList.add("is-pressing"); // 按压反馈（JS 控制，关闭菜单后可可靠清除，避免原生高亮卡灰）
   touchState.timer = setTimeout(() => {
     if (!touchState) return;
     const dx = Math.abs(touchState.lastX - touchState.startX);
@@ -434,6 +435,7 @@ function onTouchMove(e) {
     // 长按计时器到点前，若纵向位移过大 → 判定为滑动滚动，释放手势
     if (dy > MOVE_CANCEL_PX && dy > dx) {
       clearTimeout(touchState.timer);
+      touchState.tr.classList.remove("is-pressing");
       touchState = null;
     }
     return; // 未进入长按态，不拦截，浏览器正常滚动
@@ -463,6 +465,7 @@ function onTouchEnd() {
   if (!touchState) return;
   clearTimeout(touchState.timer);
   const st = touchState;
+  st.tr.classList.remove("is-pressing");
   touchState = null;
   if (st.dragging) {
     st.tr.classList.add("dropping");
