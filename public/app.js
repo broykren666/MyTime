@@ -351,7 +351,7 @@ function formatBirthdayTime(task) {
     const dayName = LUNAR_DAY_NAMES[task.lunarDay] || "";
     const leap = task.lunarLeap ? "闰" : "";
     const refYear = getReferenceYear(task);
-    return refYear ? `${leap}${monthName}${dayName}（${refYear}年）` : `${leap}${monthName}${dayName}`;
+    return refYear ? `${leap}${monthName}${dayName} | ${refYear}年` : `${leap}${monthName}${dayName}`;
   }
   return task.birthdayValue || "—";
 }
@@ -361,7 +361,8 @@ function formatMemorialTime(task) {
     const monthName = LUNAR_MONTH_NAMES[task.lunarMonth] || "";
     const dayName = LUNAR_DAY_NAMES[task.lunarDay] || "";
     const leap = task.lunarLeap ? "闰" : "";
-    return `${leap}${monthName}${dayName}`;
+    const refYear = task.lunarYear || "";
+    return refYear ? `${leap}${monthName}${dayName} | ${refYear}年` : `${leap}${monthName}${dayName}`;
   }
   return task.memorialValue || "—";
 }
@@ -1109,8 +1110,14 @@ function computeTimer(task, now) {
     // 当天判断：target 与 now 是否为同一天（用日期而非毫秒差，避免目标在今日凌晨已过时误判为过期）
     const isSameDay = startOfDay(target) === startOfDay(now);
     if (isSameDay) {
-      const d = new Date(target);
-      const todayLabel = `${d.getMonth() + 1}月${d.getDate()}日 | 今天`;
+      let todayLabel;
+      if (task.calendarType === "lunar") {
+        const leapLabel = task.lunarLeap ? "闰" : "";
+        todayLabel = `${leapLabel}${LUNAR_MONTH_NAMES[task.lunarMonth] || ""}${LUNAR_DAY_NAMES[task.lunarDay] || ""} | 今天`;
+      } else {
+        const d = new Date(target);
+        todayLabel = `${d.getMonth() + 1}月${d.getDate()}日 | 今天`;
+      }
       return { text: todayLabel, cls: "is-red", progress: 0, targetLabel: fmtDate(target) };
     }
     if (diff >= 0) {
