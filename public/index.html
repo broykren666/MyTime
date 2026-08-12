@@ -15,6 +15,37 @@
         document.documentElement.dataset.theme = t;
       } catch (e) {}
     })();
+
+    // 提前恢复小日历位置，避免刷新时先在默认位置闪一下
+    (function () {
+      try {
+        var raw = localStorage.getItem("mytime_mini_calendar_pos");
+        if (raw) {
+          var p = JSON.parse(raw);
+          if (p && typeof p.x === "number" && typeof p.y === "number") {
+            var s = ".mini-calendar{left:" + p.x + "px;top:" + p.y + "px;right:auto;}";
+            var style = document.createElement("style");
+            style.id = "mc-pos-restore";
+            style.textContent = s;
+            document.documentElement.appendChild(style);
+          }
+        }
+      } catch (e) {}
+    })();
+
+    // 提前恢复小日历「今日信息」折叠态，避免刷新时先展开闪一下
+    (function () {
+      try {
+        if (localStorage.getItem("mytime_mc_all_collapsed") === "1") {
+          var style = document.createElement("style");
+          style.id = "mc-collapse-restore";
+          style.textContent = ".mini-calendar #mcBody{display:none;}";
+          document.documentElement.appendChild(style);
+          // 标记，供 JS 在初始化时同步 class
+          document.documentElement.dataset.mcAllCollapsed = "1";
+        }
+      } catch (e) {}
+    })();
   </script>
 </head>
 <body>
@@ -266,12 +297,12 @@
         </div>
 
         <div class="field">
-          <span class="field-label"><span class="label-icon">⬇️</span>导入（将覆盖当前全部数据）</span>
-          <div class="import-row">
+          <div class="field-row">
+            <span class="field-label"><span class="label-icon">⬇️</span>导入（将覆盖当前全部数据）</span>
             <input type="file" id="importInput" accept="application/json,.json" class="input" hidden />
             <button id="importPickBtn" class="btn btn-ghost" type="button">选择文件</button>
-            <span id="importFileName" class="import-file-name"></span>
           </div>
+          <span id="importFileName" class="import-file-name"></span>
           <button id="importBtn" class="btn btn-primary" type="button">导入并覆盖</button>
         </div>
 

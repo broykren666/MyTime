@@ -106,9 +106,9 @@ body {
 .notice-icon { font-size: 15px; line-height: 1; }
 .data-notice[hidden] { display: none; }
 #dataModal .modal-body .btn { width: 100%; justify-content: center; }
-#dataModal .import-row .btn { width: auto; }
-.import-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.import-file-name { font-size: 12.5px; color: var(--text-soft); word-break: break-all; }
+#dataModal .field-row .btn { width: auto; }
+.field-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.import-file-name { display: block; font-size: 12.5px; color: var(--text-soft); word-break: break-all; margin-top: 6px; }
 .data-msg { font-size: 13px; padding: 8px 12px; border-radius: var(--radius-sm); }
 .data-msg.is-ok { background: rgba(16, 185, 129, 0.12); color: var(--success); }
 .data-msg.is-err { background: rgba(239, 68, 68, 0.12); color: var(--danger); }

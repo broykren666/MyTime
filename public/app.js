@@ -1831,12 +1831,16 @@ function initMiniCalendarDrag() {
   const handle = box.querySelector(".mini-calendar__handle");
   if (!handle) return;
 
-  // 恢复上次位置（默认左上角）
+  // 注：位置的「首帧恢复」已提前在 index.html 的 <head> 内联脚本中完成
+  //      （避免刷新时在默认左上角闪一下）。这里把恢复出来的位置同步到内联
+  //      style 上，保证后续拖拽以当前实际坐标为起点。
   try {
-    const saved = JSON.parse(localStorage.getItem(MC_POS_KEY) || "null");
-    if (saved && typeof saved.x === "number" && typeof saved.y === "number") {
-      box.style.left = saved.x + "px";
-      box.style.top = saved.y + "px";
+    const cs = getComputedStyle(box);
+    const curLeft = parseFloat(cs.left);
+    const curTop = parseFloat(cs.top);
+    if (!isNaN(curLeft) && !isNaN(curTop) && cs.left !== "auto" && cs.top !== "auto") {
+      box.style.left = curLeft + "px";
+      box.style.top = curTop + "px";
       box.style.right = "auto";
       box.dataset.dragged = "1";
     }
