@@ -266,6 +266,7 @@ function renderList() {
 
   els.list.replaceChildren(frag);
   bindDragSort();
+  bindTouchSort();
   updateTimers();
   revealTable();
 }
@@ -322,6 +323,165 @@ function moveTask(fromId, toId) {
   tasks.splice(to, 0, item);
   saveTasks();
   renderList();
+}
+
+/* ====================================================================
+ * 移动端触摸手势（仅 ≤560px 生效，PC 端直接跳过，零影响）
+ * - 长按卡片 ~380ms → 底部弹出操作栏（修改 / 删除）
+ * - 长按后继续拖动 → 卡片排序，与「纵向滑动滚动」严格区分
+ * ================================================================== */
+const isMobileView = () => window.matchMedia("(max-width: 560px)").matches;
+
+// ---- 底部操作栏 ----
+const actionSheet = document.getElementById("actionSheet");
+const actionSheetOverlay = document.getElementById("actionSheetOverlay");
+const actionSheetTitle = document.getElementById("actionSheetTitle");
+const actionEditBtn = document.getElementById("actionEditBtn");
+const actionDelBtn = document.getElementById("actionDelBtn");
+const actionCancelBtn = document.getElementById("actionCancelBtn");
+let actionTargetId = null;
+
+function showActionSheet(taskId) {
+  const task = tasks.find(t => t.id === taskId);
+  if (!task) return;
+  actionTargetId = taskId;
+  actionSheetTitle.textContent = task.name;
+  actionSheet.classList.add("is-open");
+  actionSheetOverlay.classList.add("is-open");
+  actionSheet.setAttribute("aria-hidden", "false");
+}
+function hideActionSheet() {
+  actionTargetId = null;
+  actionSheet.classList.remove("is-open");
+  actionSheetOverlay.classList.remove("is-open");
+  actionSheet.setAttribute("aria-hidden", "true");
+}
+actionEditBtn.addEventListener("click", () => {
+  const id = actionTargetId;
+  hideActionSheet();
+  if (id) openModal(id);
+});
+actionDelBtn.addEventListener("click", () => {
+  const id = actionTargetId;
+  hideActionSheet();
+  if (id) removeTask(id);
+});
+actionCancelBtn.addEventListener("click", hideActionSheet);
+actionSheetOverlay.addEventListener("click", hideActionSheet);
+
+let touchState = null; // 当前手势状态
+const LONG_PRESS_MS = 380;       // 长按判定时长
+const MOVE_CANCEL_PX = 10;       // 超时前移动超过此值 → 判定为滑动滚动
+const DRAG_THRESHOLD_PX = 8;     // 长按后移动超过此值 → 进入拖动排序
+
+function bindTouchSort() {
+  if (!isMobileView()) return; // 桌面端跳过，保持原鼠标拖放逻辑
+
+  const rows = els.list.querySelectorAll("tr");
+  rows.forEach(row => {
+    row.addEventListener("touchstart", onTouchStart, { passive: false });
+    row.addEventListener("touchmove", onTouchMove, { passive: false });
+    row.addEventListener("touchend", onTouchEnd, { passive: false });
+    row.addEventListener("touchcancel", onTouchEnd, { passive: false });
+  });
+}
+
+function onTouchStart(e) {
+  if (!isMobileView() || touchState) return;
+  const tr = e.currentTarget;
+  const touch = e.touches[0];
+  touchState = {
+    tr,
+    id: tr.dataset.id,
+    startX: touch.clientX,
+    startY: touch.clientY,
+    longFired: false,
+    dragging: false,
+    lastX: touch.clientX,
+    lastY: touch.clientY,
+    movedOnScroll: false,
+    timer: null,
+  };
+  // 长按计时器：到点且手指基本未动 → 视为长按
+  touchState.timer = setTimeout(() => {
+    if (!touchState) return;
+    const dx = Math.abs(touchState.lastX - touchState.startX);
+    const dy = Math.abs(touchState.lastY - touchState.startY);
+    if (dx < DRAG_THRESHOLD_PX && dy < DRAG_THRESHOLD_PX) {
+      touchState.longFired = true;
+      if (navigator.vibrate) navigator.vibrate(15); // 轻微震动反馈
+      showActionSheet(touchState.id);
+    }
+  }, LONG_PRESS_MS);
+}
+
+function onTouchMove(e) {
+  if (!touchState) return;
+  const touch = e.touches[0];
+  const dx = Math.abs(touch.clientX - touchState.startX);
+  const dy = Math.abs(touch.clientY - touchState.startY);
+  touchState.lastX = touch.clientX;
+  touchState.lastY = touch.clientY;
+
+  if (!touchState.longFired) {
+    // 长按计时器到点前，若纵向位移过大 → 判定为滑动滚动，释放手势
+    if (dy > MOVE_CANCEL_PX && dy > dx) {
+      clearTimeout(touchState.timer);
+      touchState = null;
+    }
+    return; // 未进入长按/拖动，不拦截，浏览器正常滚动
+  }
+
+  // 长按已触发：移动超过阈值则进入拖动排序
+  if (!touchState.dragging && (dx > DRAG_THRESHOLD_PX || dy > DRAG_THRESHOLD_PX)) {
+    touchState.dragging = true;
+    touchState.tr.classList.add("is-dragging-mobile");
+    hideActionSheet();
+  }
+  if (touchState.dragging) {
+    e.preventDefault(); // 阻止页面滚动，进入拖动排序
+    updateDragPosition(touchState.tr, touch.clientY);
+  }
+}
+
+function onTouchEnd() {
+  if (!touchState) return;
+  clearTimeout(touchState.timer);
+  const st = touchState;
+  touchState = null;
+  if (st.dragging) {
+    st.tr.classList.remove("is-dragging-mobile");
+    commitDrag(st.tr);
+  }
+  // 若仅长按未拖动，底部操作栏保持打开（由用户点击操作）
+}
+
+// 根据手指 Y 与各卡片中线比较，实时调整插入位置（视觉预览）
+function updateDragPosition(dragTr, y) {
+  const rows = Array.from(els.list.querySelectorAll("tr")).filter(r => r !== dragTr);
+  let target = null;
+  for (const r of rows) {
+    const rect = r.getBoundingClientRect();
+    const mid = rect.top + rect.height / 2;
+    if (y < mid) { target = r; break; }
+  }
+  if (target) {
+    els.list.insertBefore(dragTr, target);
+  } else {
+    els.list.appendChild(dragTr);
+  }
+}
+
+// 提交排序：对比 DOM 顺序与 tasks 顺序，归并重排后持久化
+function commitDrag(dragTr) {
+  const order = Array.from(els.list.querySelectorAll("tr")).map(r => r.dataset.id);
+  const map = new Map(tasks.map(t => [t.id, t]));
+  const next = order.map(id => map.get(id)).filter(Boolean);
+  if (next.length === tasks.length) {
+    tasks = next;
+    saveTasks();
+    renderList();
+  }
 }
 
 function opBtn(label, title, disabled, onClick, danger) {

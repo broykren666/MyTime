@@ -23,23 +23,23 @@
     <header class="topbar">
       <div class="brand">
         <span class="brand-dot"></span>
-        <h1>MyTime 任务计时器</h1>
+        <h1>MyTime</h1>
       </div>
       <div class="top-actions">
         <button id="themeBtn" class="btn btn-ghost" type="button" title="切换主题" aria-label="切换主题">
           <span id="themeIcon">🌙</span>
         </button>
         <button id="addBtn" class="btn btn-primary">
-          <span class="plus">+</span> 添加任务
+          <span class="plus">+</span> 任务
         </button>
         <button id="dataBtn" class="btn btn-ghost" type="button" title="数据管理">
-          <span class="db-icon">🗄️</span> 数据管理
+          <span class="db-icon">🗄️</span> 数据
         </button>
       </div>
     </header>
 
-    <!-- 顶部信息容器：每日一言 -->
-    <section class="infobar" aria-label="每日一言">
+    <!-- 顶部信息容器：每日一言（仅在桌面端显示，手机端隐藏） -->
+    <section class="infobar infobar--desktop" aria-label="每日一言">
       <!-- 每日一言 -->
       <div class="daily-quote" id="dailyQuote">
         <span class="dq-text" id="dqText"></span>
@@ -276,6 +276,15 @@
   <script src="vendor/croner.umd.min.js" defer></script>
   <script src="vendor/lunar.js" defer></script>
   <script src="vendor/holidays.js" defer></script>
+  <!-- 移动端长按任务卡片弹出的底部操作栏 -->
+  <div class="action-sheet__overlay" id="actionSheetOverlay"></div>
+  <div class="action-sheet" id="actionSheet" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="action-sheet__title" id="actionSheetTitle"></div>
+    <button type="button" class="action-sheet__btn action-sheet__btn--edit" id="actionEditBtn">修改</button>
+    <button type="button" class="action-sheet__btn action-sheet__btn--del" id="actionDelBtn">删除</button>
+    <button type="button" class="action-sheet__btn action-sheet__btn--cancel" id="actionCancelBtn">取消</button>
+  </div>
+
   <script src="app.js" defer></script>
 </body>
 </html>
