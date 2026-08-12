@@ -106,6 +106,7 @@ body {
   padding: 10px 12px;
 }
 .notice-icon { font-size: 15px; line-height: 1; }
+.data-notice[hidden] { display: none; }
 #dataModal .modal-body .btn { width: 100%; justify-content: center; }
 #dataModal .import-row .btn { width: auto; }
 .import-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -386,6 +387,7 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   border-radius: var(--radius-sm);
   padding: 9px 12px; margin-top: 2px;
 }
+.type-lock-notice[hidden] { display: none; }
 
 /* ===== Cron 信息栏 ===== */
 .cron-info {
