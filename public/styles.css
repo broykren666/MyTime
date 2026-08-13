@@ -573,6 +573,26 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 .bazi-analysis__row { display: flex; align-items: baseline; gap: 10px; font-size: 13px; line-height: 1.6; }
 .bazi-analysis__label { flex: 0 0 64px; color: var(--text-soft); }
 .bazi-analysis__val { flex: 1; color: var(--text); letter-spacing: .5px; }
+/* 五行统计、日主信息居中显示 */
+#baziAnaCount, #baziAnaDayMaster { text-align: center; }
+/* 四柱五行/纳音：年/月/日/时 4 列对齐 */
+.bazi-analysis__val.bazi-ana-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.bazi-ana-col { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.bazi-ana-val { font-size: 12px; color: var(--text); letter-spacing: .5px; }
+/* 五行统计标签（金木水火土） */
+.bazi-wx-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--primary-strong, #3b5bdb);
+  background: var(--primary-soft, rgba(99, 102, 241, 0.12));
+  border: 1px solid var(--primary-soft, rgba(99, 102, 241, 0.25));
+  padding: 3px 8px;
+  border-radius: 999px;
+  margin-right: 4px;
+}
 /* 解析中的年/月/日/时胶囊（复用日历八字标签胶囊风格） */
 .bazi-analysis__val .bazi-pill {
   display: inline-flex;
@@ -586,7 +606,6 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   padding: 5px 10px;
   border-radius: 999px;
   white-space: nowrap;
-  margin-right: 4px;
 }
 
 /* ===== 响应式 ===== */

@@ -2121,9 +2121,9 @@ function calcBazi() {
   ];
   const wuxingOf = [ec.getYearWuXing(), ec.getMonthWuXing(), ec.getDayWuXing(), ec.getTimeWuXing()];
   const nayinOf = [ec.getYearNaYin(), ec.getMonthNaYin(), ec.getDayNaYin(), ec.getTimeNaYin()];
-  // 仅把 年/月/日/时 四字用胶囊包裹，其后跟随对应值
+  // 年/月/日/时 四字用胶囊包裹，4 列对齐显示
   const pillsHtml = vals =>
-    pillars.map((p, i) => `<span class="bazi-pill">${p.name}</span>${vals[i]}`).join("　");
+    pillars.map((p, i) => `<span class="bazi-ana-col"><span class="bazi-pill">${p.name}</span><span class="bazi-ana-val">${vals[i]}</span></span>`).join("");
   document.getElementById("baziAnaWuxing").innerHTML = pillsHtml(wuxingOf);
   document.getElementById("baziAnaNayin").innerHTML = pillsHtml(nayinOf);
 
@@ -2131,12 +2131,13 @@ function calcBazi() {
   const dayGanWx = ec.getDayWuXing();
   document.getElementById("baziAnaDayMaster").textContent = `${dayGan}（${dayGanWx}）`;
 
-  // 五行统计：累计四柱五行中各元素个数
+  // 五行统计：累计四柱五行中各元素个数，按数量从多到少排序
   const WX = ["木", "火", "土", "金", "水"];
   const wxChars = wuxingOf.join("");
-  const counts = WX.map(w => (wxChars.split(w).length - 1));
-  document.getElementById("baziAnaCount").textContent =
-    WX.map((w, i) => `${w}${counts[i]}`).join(" ");
+  const counted = WX.map(w => ({ w, n: wxChars.split(w).length - 1 }))
+                    .sort((a, b) => b.n - a.n);
+  document.getElementById("baziAnaCount").innerHTML =
+    counted.map(({ w, n }) => `<span class="bazi-wx-tag">${w}</span>${n}`).join("　");
 
   document.getElementById("baziResult").hidden = false;
 }
