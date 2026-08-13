@@ -1216,7 +1216,7 @@ function computeTimer(task, now) {
       if (refYear) {
         const nextLunarYear = Lunar.fromDate(new Date(nextTs)).getYear();
         const yearsPassed = nextLunarYear - refYear - 1;
-        if (yearsPassed > 0) yLabel = `${yearsPassed}年 | `;
+        if (yearsPassed > 0) yLabel = `#${yearsPassed} | `;
       }
       if (diffDays === 0) {
         const leapLabel = task.lunarLeap ? "闰" : "";
@@ -1234,7 +1234,7 @@ function computeTimer(task, now) {
     // 公历纪念日
     const born = new Date((task.birthdayValue || todayStr()) + "T00:00:00");
     const years = (now - born.getTime()) / unitMs("year", now);
-    const yLabel = years >= 1 ? `${Math.floor(years)}年 | ` : "";
+    const yLabel = years >= 1 ? `#${Math.floor(years)} | ` : "";
     const next = nextBirthday(born, now);
     const nextTs = next.nextTs;
     if (next.diff === 0) {
