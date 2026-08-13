@@ -1314,10 +1314,16 @@ function computeTimer(task, now) {
     const prevTs = next.getTime() - period;
     const progress = 1 - progressBetween(prevTs, next.getTime(), now);
     // 锚定时：周期序号从 anchor 起算，直观体现锚定效果
+    // 注意：anchor 在存储中可能是毫秒时间戳，也可能是 ISO 字符串，
+    // 需用 new Date() 归一化为数字时间戳，否则 now - 字符串 会得到 NaN，
+    // 导致 Math.max(0, NaN) = 0，序号永远停在 1#。
     let prefix = "";
     if (task.anchor) {
-      const n = Math.floor(Math.max(0, now - task.anchor) / period) + 1;
-      prefix = `#${n} `;
+      const anchorTs = new Date(task.anchor).getTime();
+      if (!Number.isNaN(anchorTs)) {
+        const n = Math.floor(Math.max(0, now - anchorTs) / period) + 1;
+        prefix = `#${n} | `;
+      }
     }
     return {
       text: prefix + fmtCountdown(remain),
