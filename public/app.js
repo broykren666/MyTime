@@ -1948,8 +1948,12 @@ function initMiniCalendarDrag() {
  * ============================================================ */
 const baziModal = document.getElementById("baziModal");
 const baziCalTypeSeg = document.getElementById("baziCalTypeSeg");
-const baziSolarFields = document.getElementById("baziSolarFields");
-const baziLunarFields = document.getElementById("baziLunarFields");
+const baziSolarRow = document.getElementById("baziSolarRow");
+const baziSolarDate = document.getElementById("baziSolarDate");
+const baziSolarTime = document.getElementById("baziSolarTime");
+const baziLunarPicker = document.getElementById("baziLunarPicker");
+const baziLunarTime = document.getElementById("baziLunarTime");
+const baziLunarLeap = document.getElementById("baziLunarLeap");
 let baziCalType = "solar"; // solar | lunar
 
 /* 天干地支（用于给四柱附上完整干支显示，便于阅读） */
@@ -1957,59 +1961,51 @@ const BAZI_GAN = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬",
 const BAZI_ZHI = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
 const BAZI_SHICHEN = ["子时", "丑时", "寅时", "卯时", "辰时", "巳时", "午时", "未时", "申时", "酉时", "戌时", "亥时"];
 
-/* 农历年份范围（用于农历模式的年选择器，与公历一致取当前年±60年） */
-function baziFillOptions() {
-  const now = new Date();
-  const curY = now.getFullYear();
-
-  // 公历年/月/日/时/分
-  fillSelect("baziYear", range(curY - 60, curY + 1), curY);
-  fillSelect("baziMonth", range(1, 13), now.getMonth() + 1);
-  fillSelect("baziDay", range(1, 32), now.getDate());
-  fillSelect("baziHour", range(0, 24), now.getHours());
-  fillSelect("baziMinute", range(0, 60), now.getMinutes());
-
-  // 农历年/月/日/时/分
-  fillSelect("baziLYear", range(curY - 60, curY + 1), curY);
-  fillSelect("baziLMonth", range(1, 13), now.getMonth() + 1);
-  fillSelect("baziLDay", range(1, 31), now.getDate());
-  fillSelect("baziLHour", range(0, 24), now.getHours());
-  fillSelect("baziLMinute", range(0, 60), now.getMinutes());
+/* 初始化八字农历下拉（年/月/日），复用纪念日农历选择器逻辑 */
+function baziInitLunarSelects() {
+  const yearSel = document.getElementById("baziLunarYear");
+  const monthSel = document.getElementById("baziLunarMonth");
+  const daySel = document.getElementById("baziLunarDay");
+  if (yearSel && yearSel.options.length === 0) {
+    for (let y = 1900; y <= 2100; y++) yearSel.add(new Option(y + "年", y));
+  }
+  if (monthSel && monthSel.options.length === 0) {
+    for (let i = 1; i <= 12; i++) monthSel.add(new Option(LUNAR_MONTH_NAMES[i], i));
+  }
+  if (daySel && daySel.options.length === 0) {
+    for (let i = 1; i <= 30; i++) daySel.add(new Option(LUNAR_DAY_NAMES[i], i));
+  }
+  const thisYear = String(new Date().getFullYear());
+  if (yearSel && [...yearSel.options].some(o => o.value === thisYear)) yearSel.value = thisYear;
+  baziRefreshLunarDays();
 }
 
-/* 生成 [start, end) 数字数组 */
-function range(start, end) {
-  const arr = [];
-  for (let i = start; i < end; i++) arr.push(i);
-  return arr;
-}
+/* 依据所选农历年/月/闰月重算日子范围，并裁剪日子下拉（仿 refreshLunarDays） */
+function baziRefreshLunarDays() {
+  const yearSel = document.getElementById("baziLunarYear");
+  const monthSel = document.getElementById("baziLunarMonth");
+  const daySel = document.getElementById("baziLunarDay");
+  if (!yearSel || !monthSel || !daySel) return;
+  const y = parseInt(yearSel.value, 10) || new Date().getFullYear();
+  const m = parseInt(monthSel.value, 10) || 1;
+  const leap = baziLunarLeap.classList.contains("is-active");
 
-/* 用数字数组填充 <select>，并选中 val */
-function fillSelect(id, values, selected) {
-  const sel = document.getElementById(id);
-  if (!sel) return;
-  sel.innerHTML = "";
-  values.forEach(v => {
-    const opt = document.createElement("option");
-    opt.value = String(v);
-    opt.textContent = String(v);
-    sel.appendChild(opt);
-  });
-  if (selected != null) sel.value = String(selected);
-}
-
-/* 农历日数：根据该农历年、月、是否闰月计算 */
-function baziLunarDayCount(year, month, leap) {
+  let dayCount = 30;
   try {
-    const ly = LunarYear.fromYear(year);
-    if (leap && ly.getLeapMonth() === month) {
-      const m = ly.getMonths().find(x => x.getYear() === year && x.getMonth() === month && x.isLeap());
-      if (m) return m.getDayCount();
+    const ly = LunarYear.fromYear(y);
+    if (leap && ly.getLeapMonth() === m) {
+      const lm = ly.getMonths().find(mo => mo.getYear() === y && mo.getMonth() === m && mo.isLeap());
+      dayCount = lm ? lm.getDayCount() : 30;
+    } else {
+      const lm = ly.getMonth(m);
+      dayCount = lm ? lm.getDayCount() : 30;
     }
-    const m = ly.getMonth(month);
-    if (m) return m.getDayCount();
-  } catch (e) { /* 忽略 */ }
-  return 30;
+  } catch (e) { dayCount = 30; }
+
+  const prevDay = parseInt(daySel.value, 10) || 1;
+  daySel.options.length = 0;
+  for (let i = 1; i <= dayCount; i++) daySel.add(new Option(LUNAR_DAY_NAMES[i], i));
+  daySel.value = String(Math.min(prevDay, dayCount));
 }
 
 /* 切换公历/农历面板 */
@@ -2018,39 +2014,37 @@ function baziSwitchCalType(type) {
   baziCalTypeSeg.querySelectorAll(".seg-item").forEach(b => {
     b.classList.toggle("is-active", b.dataset.cal === type);
   });
-  baziSolarFields.hidden = type !== "solar";
-  baziLunarFields.hidden = type !== "lunar";
+  const isLunar = type === "lunar";
+  baziSolarRow.hidden = isLunar;
+  baziLunarPicker.hidden = !isLunar;
   document.getElementById("baziResult").hidden = true;
-}
-
-/* 农历模式切换月/年时，刷新日选项（避免选中不存在的 30 日） */
-function baziRefreshLunarDay() {
-  const y = parseInt(document.getElementById("baziLYear").value, 10);
-  const m = parseInt(document.getElementById("baziLMonth").value, 10);
-  const leap = document.getElementById("baziLLeapChk").checked;
-  const daySel = document.getElementById("baziLDay");
-  const prev = parseInt(daySel.value, 10) || 1;
-  const count = baziLunarDayCount(y, m, leap);
-  fillSelect("baziLDay", range(1, count + 1), Math.min(prev, count));
 }
 
 /* 打开弹窗 */
 function openBaziCalculator() {
-  baziFillOptions();
   baziSwitchCalType("solar");
-  baziRefreshLunarDay(); // 校正农历日选项
-  // 默认填入当前时间
+  baziInitLunarSelects();
+
+  // 默认填入当前公历日期时间
   const now = new Date();
-  document.getElementById("baziYear").value = String(now.getFullYear());
-  document.getElementById("baziMonth").value = String(now.getMonth() + 1);
-  document.getElementById("baziDay").value = String(now.getDate());
-  document.getElementById("baziHour").value = String(now.getHours());
-  document.getElementById("baziMinute").value = String(now.getMinutes());
-  document.getElementById("baziLYear").value = String(now.getFullYear());
-  document.getElementById("baziLMonth").value = String(now.getMonth() + 1);
-  document.getElementById("baziLDay").value = String(now.getDate());
-  document.getElementById("baziLHour").value = String(now.getHours());
-  document.getElementById("baziLMinute").value = String(now.getMinutes());
+  const y = now.getFullYear();
+  const m = now.getMonth() + 1;
+  const d = now.getDate();
+  const hh = now.getHours();
+  const mi = now.getMinutes();
+  baziSolarDate.value = `${y}-${pad2(m)}-${pad2(d)}`;
+  baziSolarTime.value = `${pad2(hh)}:${pad2(mi)}`;
+  baziLunarTime.value = `${pad2(hh)}:${pad2(mi)}`;
+
+  // 同步：农历模式默认也定位到当前农历年月日，闰月关闭
+  const curLunar = Solar.fromDate(now).getLunar();
+  document.getElementById("baziLunarYear").value = String(curLunar.getYear());
+  document.getElementById("baziLunarMonth").value = String(curLunar.getMonth());
+  baziLunarLeap.classList.remove("is-active");
+  baziRefreshLunarDays();
+  document.getElementById("baziLunarDay").value = String(curLunar.getDay());
+
+  // 打开弹窗时不展示八字结果，等待用户点击「开始计算八字」
   document.getElementById("baziResult").hidden = true;
   baziModal.hidden = false;
 }
@@ -2062,24 +2056,24 @@ function closeBaziCalculator() {
 
 /* 计算八字 */
 function calcBazi() {
-  let lunar, solar, srcLabel;
+  let lunar, solar;
   try {
     if (baziCalType === "solar") {
-      const y = parseInt(document.getElementById("baziYear").value, 10);
-      const m = parseInt(document.getElementById("baziMonth").value, 10);
-      const d = parseInt(document.getElementById("baziDay").value, 10);
-      const h = parseInt(document.getElementById("baziHour").value, 10);
-      const mi = parseInt(document.getElementById("baziMinute").value, 10);
+      // 公历：从 date/time 输入控件取值
+      const dateVal = baziSolarDate.value; // YYYY-MM-DD
+      const timeVal = baziSolarTime.value || "00:00"; // HH:MM
+      if (!dateVal) throw new Error("empty date");
+      const [y, m, d] = dateVal.split("-").map(Number);
+      const [h, mi] = timeVal.split(":").map(Number);
       solar = Solar.fromYmdHms(y, m, d, h, mi, 0);
       lunar = solar.getLunar();
-      srcLabel = `公历 ${y} 年 ${m} 月 ${d} 日 ${pad2(h)}:${pad2(mi)}`;
     } else {
-      const y = parseInt(document.getElementById("baziLYear").value, 10);
-      const m = parseInt(document.getElementById("baziLMonth").value, 10);
-      const d = parseInt(document.getElementById("baziLDay").value, 10);
-      const h = parseInt(document.getElementById("baziLHour").value, 10);
-      const mi = parseInt(document.getElementById("baziLMinute").value, 10);
-      const leap = document.getElementById("baziLLeapChk").checked;
+      const y = parseInt(document.getElementById("baziLunarYear").value, 10);
+      const m = parseInt(document.getElementById("baziLunarMonth").value, 10);
+      const d = parseInt(document.getElementById("baziLunarDay").value, 10);
+      const lunarTimeVal = baziLunarTime.value || "00:00"; // HH:MM
+      const [h, mi] = lunarTimeVal.split(":").map(Number);
+      const leap = baziLunarLeap.classList.contains("is-active");
 
       // 农历月先转公历日期（带时分），再取 lunar，确保闰月/时辰都正确。
       // Lunar.fromYmdHms 不支持闰月参数，故统一走「农历→公历→lunar」路径。
@@ -2088,7 +2082,6 @@ function calcBazi() {
       solarDate.setHours(h, mi, 0, 0);
       solar = Solar.fromDate(solarDate);
       lunar = solar.getLunar();
-      srcLabel = `农历 ${y} 年 ${m} 月 ${d} 日 ${pad2(h)}:${pad2(mi)}` + (leap ? "（闰月）" : "");
     }
   } catch (e) {
     alert("日期无效，请检查输入。");
@@ -2101,37 +2094,28 @@ function calcBazi() {
   const dayGz = ec.getDay();
   const timeGz = ec.getTime();
 
-  // 拆分干支为「天干 + 地支」便于阅读展示
-  setPillar("baziResultYear", "baziResultYearGz", yearGz);
-  setPillar("baziResultMonth", "baziResultMonthGz", monthGz);
-  setPillar("baziResultDay", "baziResultDayGz", dayGz);
-  setPillar("baziResultHour", "baziResultHourGz", timeGz);
+  // 直接展示四柱干支（不再拆分天干/地支）
+  document.getElementById("baziResultYear").textContent = yearGz;
+  document.getElementById("baziResultMonth").textContent = monthGz;
+  document.getElementById("baziResultDay").textContent = dayGz;
+  document.getElementById("baziResultHour").textContent = timeGz;
 
   const hourNum = shiChenIndex(timeGz);
-  const meta = document.getElementById("baziResultMeta");
-  meta.innerHTML =
-    `${srcLabel}<br>` +
-    `对应公历：${solar.getYear()} 年 ${solar.getMonth()} 月 ${solar.getDay()} 日<br>` +
-    `农历：${lunar.getYearInChinese()}年${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}　` +
-    `生肖：${lunar.getShengXiao()}<br>` +
-    `时辰：${hourNum >= 0 ? BAZI_SHICHEN[hourNum] : timeGz}`;
+  const shiChen = hourNum >= 0 ? BAZI_SHICHEN[hourNum] : timeGz;
+  const shengXiao = lunar.getYearShengXiao();
+  // 日期卡片：公历模式显示农历信息，农历模式显示公历信息（交叉展示）
+  const isSolar = baziCalType === "solar";
+  document.getElementById("baziMetaLabel").textContent = isSolar ? "农历" : "公历";
+  document.getElementById("baziResultDate").textContent = isSolar
+    ? `${lunar.getYearInChinese()}年${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}`
+    : `${solar.getYear()}年${solar.getMonth()}月${solar.getDay()}日`;
+  document.getElementById("baziResultShiChen").textContent = shiChen;
+  document.getElementById("baziResultZodiac").textContent = shengXiao;
 
   document.getElementById("baziResult").hidden = false;
 }
 
 function pad2(n) { return n < 10 ? "0" + n : String(n); }
-
-/* 把干支字符串（如「甲子」）拆成天干、地支两段展示 */
-function setPillar(valId, gzId, gz) {
-  const valEl = document.getElementById(valId);
-  const gzEl = document.getElementById(gzId);
-  valEl.textContent = gz;
-  if (gz && gz.length === 2) {
-    gzEl.textContent = `${gz[0]}（天干） · ${gz[1]}（地支）`;
-  } else {
-    gzEl.textContent = "";
-  }
-}
 
 /* 从时柱地支反推时辰序号（子时起始） */
 function shiChenIndex(timeGz) {
@@ -2159,10 +2143,15 @@ baziModal.querySelectorAll("[data-bazi-close]").forEach(el =>
 );
 // 计算
 document.getElementById("baziCalcSubmit").addEventListener("click", calcBazi);
-// 农历模式下切换年/月/闰月时刷新日选项
-["baziLYear", "baziLMonth", "baziLLeapChk"].forEach(id => {
+// 农历闰月按钮切换
+baziLunarLeap.addEventListener("click", () => {
+  baziLunarLeap.classList.toggle("is-active");
+  baziRefreshLunarDays();
+});
+// 农历模式下切换年/月时刷新日选项
+["baziLunarYear", "baziLunarMonth"].forEach(id => {
   const el = document.getElementById(id);
-  if (el) el.addEventListener("change", baziRefreshLunarDay);
+  if (el) el.addEventListener("change", baziRefreshLunarDays);
 });
 // Esc 关闭
 document.addEventListener("keydown", e => {

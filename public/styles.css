@@ -533,41 +533,24 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 .bazi-modal__close:hover { background: var(--bg); color: var(--text); }
 
 .bazi-modal__body { display: flex; flex-direction: column; gap: 14px; }
-.bazi-cal-type { align-self: flex-start; }
 
-.bazi-fields { display: flex; flex-direction: column; gap: 12px; }
-.bazi-fields[hidden] { display: none; }
-.lx-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.lx-row--time { margin-top: 2px; }
-.lx-sep { color: var(--text-soft); font-size: 13px; }
-.bazi-select {
-  min-width: 64px;
-  height: 34px;
-  padding: 0 8px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--text);
-  font-size: 14px;
-  cursor: pointer;
-  outline: none;
+/* 公历/农历输入：日期 + 时间 放一行；农历：年/月/日 + 闰月 + 时间 放一行 */
+.bazi-input-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
 }
-.bazi-select:focus { border-color: var(--primary); }
-.bazi-leap { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-soft); margin-top: 2px; }
+.bazi-input-row[hidden] { display: none; }
+.bazi-solar-input { flex: 1; min-width: 0; }
+.bazi-input-row .anchor-time { flex: 0 0 120px; }
+.bazi-input-row .lunar-select { flex: 1; min-width: 64px; }
+.bazi-input-row .lunar-year { flex: 1.1; }
+.bazi-input-row .lunar-day { flex: 0.8; }
+.bazi-input-row .leap-btn { flex-shrink: 0; }
 
-.bazi-calc-submit {
-  margin-top: 4px;
-  height: 42px;
-  border: none;
-  border-radius: 10px;
-  background: var(--primary);
-  color: #fff;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background .15s ease;
-}
-.bazi-calc-submit:hover { background: var(--primary-strong); }
+/* 第三行按钮：复用 .btn .btn-primary，全宽且文字居中 */
+.bazi-calc-submit { width: 100%; justify-content: center; }
 
 .bazi-result { display: flex; flex-direction: column; gap: 12px; border-top: 1px solid var(--border); padding-top: 14px; }
 .bazi-result[hidden] { display: none; }
@@ -580,8 +563,9 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 }
 .bazi-pillar__label { font-size: 12px; color: var(--text-soft); }
 .bazi-pillar__val { font-size: 22px; font-weight: 700; color: var(--primary-deep); letter-spacing: 2px; }
-.bazi-pillar__gz { font-size: 12px; color: var(--text-soft); }
-.bazi-result__meta { font-size: 13px; color: var(--text-soft); line-height: 1.6; }
+.bazi-result__meta { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; }
+.bazi-meta-pillar { padding: 10px 4px; }
+.bazi-meta-val { font-size: 16px; letter-spacing: 1px; }
 
 /* ===== 响应式 ===== */
 @media (max-width: 560px) {
