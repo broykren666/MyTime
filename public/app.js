@@ -2112,6 +2112,32 @@ function calcBazi() {
   document.getElementById("baziResultShiChen").textContent = shiChen;
   document.getElementById("baziResultZodiac").textContent = shengXiao;
 
+  // ===== 生辰解析 =====
+  const pillars = [
+    { name: "年", gz: yearGz },
+    { name: "月", gz: monthGz },
+    { name: "日", gz: dayGz },
+    { name: "时", gz: timeGz },
+  ];
+  const wuxingOf = [ec.getYearWuXing(), ec.getMonthWuXing(), ec.getDayWuXing(), ec.getTimeWuXing()];
+  const nayinOf = [ec.getYearNaYin(), ec.getMonthNaYin(), ec.getDayNaYin(), ec.getTimeNaYin()];
+  // 仅把 年/月/日/时 四字用胶囊包裹，其后跟随对应值
+  const pillsHtml = vals =>
+    pillars.map((p, i) => `<span class="bazi-pill">${p.name}</span>${vals[i]}`).join("　");
+  document.getElementById("baziAnaWuxing").innerHTML = pillsHtml(wuxingOf);
+  document.getElementById("baziAnaNayin").innerHTML = pillsHtml(nayinOf);
+
+  const dayGan = ec.getDayGan();
+  const dayGanWx = ec.getDayWuXing();
+  document.getElementById("baziAnaDayMaster").textContent = `${dayGan}（${dayGanWx}）`;
+
+  // 五行统计：累计四柱五行中各元素个数
+  const WX = ["木", "火", "土", "金", "水"];
+  const wxChars = wuxingOf.join("");
+  const counts = WX.map(w => (wxChars.split(w).length - 1));
+  document.getElementById("baziAnaCount").textContent =
+    WX.map((w, i) => `${w}${counts[i]}`).join(" ");
+
   document.getElementById("baziResult").hidden = false;
 }
 

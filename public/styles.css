@@ -567,6 +567,28 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 .bazi-meta-pillar { padding: 10px 4px; }
 .bazi-meta-val { font-size: 16px; letter-spacing: 1px; }
 
+/* 生辰解析区块 */
+.bazi-analysis { display: flex; flex-direction: column; gap: 8px; border-top: 1px dashed var(--border); padding-top: 12px; }
+.bazi-analysis__title { font-size: 13px; font-weight: 600; color: var(--text-soft); }
+.bazi-analysis__row { display: flex; align-items: baseline; gap: 10px; font-size: 13px; line-height: 1.6; }
+.bazi-analysis__label { flex: 0 0 64px; color: var(--text-soft); }
+.bazi-analysis__val { flex: 1; color: var(--text); letter-spacing: .5px; }
+/* 解析中的年/月/日/时胶囊（复用日历八字标签胶囊风格） */
+.bazi-analysis__val .bazi-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--primary-strong, #3b5bdb);
+  background: var(--primary-soft, rgba(99, 102, 241, 0.12));
+  border: 1px solid var(--primary-soft, rgba(99, 102, 241, 0.25));
+  padding: 5px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+  margin-right: 4px;
+}
+
 /* ===== 响应式 ===== */
 @media (max-width: 560px) {
   .topbar h1 { font-size: 20px; }
