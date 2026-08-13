@@ -490,6 +490,99 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 /* ===== 弹窗底部 ===== */
 .modal-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
 
+/* ===== 八字计算图标（小日历八字行右对齐） ===== */
+.bazi-calc-btn {
+  margin-left: auto;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--primary);
+  font-size: 14px;
+  line-height: 22px;
+  text-align: center;
+  cursor: pointer;
+  transition: background .15s ease, transform .1s ease;
+}
+.bazi-calc-btn:hover { background: rgba(59, 130, 246, 0.12); }
+.bazi-calc-btn:active { transform: scale(0.92); }
+
+/* ===== 八字计算弹窗 ===== */
+.bazi-modal { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.bazi-modal[hidden] { display: none; }
+.bazi-modal__overlay { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.45); }
+.bazi-modal__card {
+  position: relative;
+  width: min(420px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25);
+  padding: 18px 20px 22px;
+}
+.bazi-modal__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.bazi-modal__title { font-size: 18px; font-weight: 600; color: var(--text); margin: 0; }
+.bazi-modal__close {
+  width: 28px; height: 28px; border: none; background: transparent;
+  font-size: 22px; line-height: 1; color: var(--text-soft); cursor: pointer; border-radius: 6px;
+}
+.bazi-modal__close:hover { background: var(--bg); color: var(--text); }
+
+.bazi-modal__body { display: flex; flex-direction: column; gap: 14px; }
+.bazi-cal-type { align-self: flex-start; }
+
+.bazi-fields { display: flex; flex-direction: column; gap: 12px; }
+.bazi-fields[hidden] { display: none; }
+.lx-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.lx-row--time { margin-top: 2px; }
+.lx-sep { color: var(--text-soft); font-size: 13px; }
+.bazi-select {
+  min-width: 64px;
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+  outline: none;
+}
+.bazi-select:focus { border-color: var(--primary); }
+.bazi-leap { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-soft); margin-top: 2px; }
+
+.bazi-calc-submit {
+  margin-top: 4px;
+  height: 42px;
+  border: none;
+  border-radius: 10px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s ease;
+}
+.bazi-calc-submit:hover { background: var(--primary-strong); }
+
+.bazi-result { display: flex; flex-direction: column; gap: 12px; border-top: 1px solid var(--border); padding-top: 14px; }
+.bazi-result[hidden] { display: none; }
+.bazi-result__grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.bazi-pillar {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 10px 4px;
+  background: var(--bg);
+  border-radius: 10px;
+}
+.bazi-pillar__label { font-size: 12px; color: var(--text-soft); }
+.bazi-pillar__val { font-size: 22px; font-weight: 700; color: var(--primary-deep); letter-spacing: 2px; }
+.bazi-pillar__gz { font-size: 12px; color: var(--text-soft); }
+.bazi-result__meta { font-size: 13px; color: var(--text-soft); line-height: 1.6; }
+
 /* ===== 响应式 ===== */
 @media (max-width: 560px) {
   .topbar h1 { font-size: 20px; }

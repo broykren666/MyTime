@@ -325,6 +325,75 @@
     <button type="button" class="action-sheet__btn action-sheet__btn--cancel" id="actionCancelBtn">取消</button>
   </div>
 
+  <!-- 八字计算弹窗 -->
+  <div id="baziModal" class="bazi-modal" hidden>
+    <div class="bazi-modal__overlay" data-bazi-close></div>
+    <div class="bazi-modal__card" role="dialog" aria-modal="true" aria-label="八字计算">
+      <div class="bazi-modal__head">
+        <h2 class="bazi-modal__title">八字计算</h2>
+        <button type="button" class="bazi-modal__close" data-bazi-close aria-label="关闭">×</button>
+      </div>
+
+      <div class="bazi-modal__body">
+        <!-- 公历 / 农历 切换 -->
+        <div class="seg bazi-cal-type" id="baziCalTypeSeg">
+          <button type="button" class="seg-item is-active" data-cal="solar">公历</button>
+          <button type="button" class="seg-item" data-cal="lunar">农历</button>
+        </div>
+
+        <!-- 公历输入区 -->
+        <div class="bazi-fields" id="baziSolarFields">
+          <div class="lx-row">
+            <select class="bazi-select" id="baziYear" data-field="year"></select>
+            <span class="lx-sep">年</span>
+            <select class="bazi-select" id="baziMonth" data-field="month"></select>
+            <span class="lx-sep">月</span>
+            <select class="bazi-select" id="baziDay" data-field="day"></select>
+            <span class="lx-sep">日</span>
+          </div>
+          <div class="lx-row lx-row--time">
+            <select class="bazi-select" id="baziHour" data-field="hour"></select>
+            <span class="lx-sep">时</span>
+            <select class="bazi-select" id="baziMinute" data-field="minute"></select>
+            <span class="lx-sep">分</span>
+          </div>
+        </div>
+
+        <!-- 农历输入区 -->
+        <div class="bazi-fields" id="baziLunarFields" hidden>
+          <div class="lx-row">
+            <select class="bazi-select" id="baziLYear" data-field="lyear"></select>
+            <span class="lx-sep">年</span>
+            <select class="bazi-select" id="baziLMonth" data-field="lmonth"></select>
+            <span class="lx-sep">月</span>
+            <select class="bazi-select" id="baziLDay" data-field="lday"></select>
+            <span class="lx-sep">日</span>
+          </div>
+          <div class="lx-row lx-row--time">
+            <select class="bazi-select" id="baziLHour" data-field="lhour"></select>
+            <span class="lx-sep">时</span>
+            <select class="bazi-select" id="baziLMinute" data-field="lminute"></select>
+            <span class="lx-sep">分</span>
+          </div>
+          <label class="bazi-leap"><input type="checkbox" id="baziLLeapChk" /> 闰月</label>
+        </div>
+
+        <button type="button" class="bazi-calc-submit" id="baziCalcSubmit">计算八字</button>
+
+        <!-- 结果 -->
+        <div class="bazi-result" id="baziResult" hidden>
+          <div class="bazi-result__grid">
+            <div class="bazi-pillar"><span class="bazi-pillar__label">年柱</span><span class="bazi-pillar__val" id="baziResultYear"></span><span class="bazi-pillar__gz" id="baziResultYearGz"></span></div>
+            <div class="bazi-pillar"><span class="bazi-pillar__label">月柱</span><span class="bazi-pillar__val" id="baziResultMonth"></span><span class="bazi-pillar__gz" id="baziResultMonthGz"></span></div>
+            <div class="bazi-pillar"><span class="bazi-pillar__label">日柱</span><span class="bazi-pillar__val" id="baziResultDay"></span><span class="bazi-pillar__gz" id="baziResultDayGz"></span></div>
+            <div class="bazi-pillar"><span class="bazi-pillar__label">时柱</span><span class="bazi-pillar__val" id="baziResultHour"></span><span class="bazi-pillar__gz" id="baziResultHourGz"></span></div>
+          </div>
+          <div class="bazi-result__meta" id="baziResultMeta"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="app.js" defer></script>
 </body>
 </html>
