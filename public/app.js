@@ -3,6 +3,8 @@
 
 const STORAGE_KEY = "mytime_tasks";
 const UNIT_LABEL = { year: "年", month: "月", week: "周", day: "天", hour: "时", minute: "分" };
+// 任务类型显示名称（与弹窗内 typeSeg 的 data-type 对应）
+const TYPE_LABEL = { countdown: "倒计时", birthday: "纪念日", memorial: "倒数日", fixedday: "固定日", cron: "Cron" };
 // 兼容旧数据：曾经用 "date" 表示固定日期，统一映射为 memorial（纪念）
 const TYPE_ALIAS = { date: "memorial" };
 
@@ -226,6 +228,11 @@ function renderList() {
     tdName.className = "cell-name";
     tdName.textContent = task.name;
 
+    // 任务类型
+    const tdType = document.createElement("td");
+    tdType.className = "col-type";
+    tdType.textContent = TYPE_LABEL[task.type] || task.type || "—";
+
     // 任务时间（设定值）
     const tdTime = document.createElement("td");
     tdTime.className = "cell-time";
@@ -261,7 +268,7 @@ function renderList() {
     ops.append(dup, edit, del);
     tdOps.appendChild(ops);
 
-    tr.append(tdDrag, tdIdx, tdName, tdTime, tdTimer, tdOps);
+    tr.append(tdDrag, tdIdx, tdType, tdName, tdTime, tdTimer, tdOps);
     frag.appendChild(tr);
   });
 

@@ -204,6 +204,7 @@ tr.dragging { opacity: .45; }
 tr.drag-over td { box-shadow: inset 0 2px 0 var(--primary); }
 tr:hover .drag-handle { color: var(--primary-strong); }
 .col-index { width: 44px; color: var(--text-soft); }
+.col-type { width: 92px; color: var(--text-soft); white-space: nowrap; }
 .col-ops { width: 200px; }
 .idx-badge {
   display: inline-flex; align-items: center; justify-content: center;
@@ -572,6 +573,20 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   .task-table tbody td.col-ops { display: none; }
   /* 隐藏序号列（手机端卡片无需序号） */
   .task-table tbody td.col-index { display: none; }
+  /* 任务类型：在手机端卡片顶部显示为小标签 */
+  .task-table tbody td.col-type {
+    flex: 0 0 auto;
+    width: auto;
+    margin-right: 8px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--surface-2, rgba(127,127,127,.12));
+    color: var(--text-soft);
+    font-size: 12px;
+    line-height: 1.4;
+    align-self: center;
+  }
+  .task-table tbody td.col-type::before { content: ""; }
   .task-table tbody td.cell-name {
     flex: 1 1 auto;
     min-width: 0;
