@@ -1543,16 +1543,12 @@ function shichenRelMin(hour, minute) {
   return rel;
 }
 
-/* 传统「X时N刻」（通俗）与「X初/正N刻」（古法）双格式：
-   每时辰 8 刻，每刻 15 分钟；前 4 刻为「初」、后 4 刻为「正」。
-   例：第1刻=初一刻，第5刻=正初刻，第7刻=正三刻。 */
+/* 传统「X时N刻」：每时辰 8 刻，每刻 15 分钟，刻序从 1 起（通俗说法）。 */
 const KE_CN = ["", "一", "二", "三", "四", "五", "六", "七", "八"];
 function shichenKe(hour, minute) {
   const sc = shichenOf(hour);
   const ke = Math.floor(shichenRelMin(hour, minute) / 15) + 1; // 1..8
-  const popular = sc + KE_CN[ke] + "刻";                         // 通俗：巳时七刻
-  const ancient = sc.charAt(0) + (ke <= 4 ? "初" : "正") + KE_CN[(ke - 1) % 4 + 1] + "刻"; // 古法：巳正三刻
-  return `${popular}（${ancient}）`;
+  return sc + KE_CN[ke] + "刻";
 }
 
 /* 填充「当前时间 + 时辰」行（年份日历日期行下方），精确到秒 */
