@@ -864,6 +864,9 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   left: 16px;
   z-index: 50;
   width: 220px;
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -908,7 +911,7 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 .mc-toggle:hover { background: rgba(255, 255, 255, 0.28); }
 .mc-toggle:active { transform: scale(0.92); }
 
-.mini-calendar__body { padding: 12px 14px 14px; }
+.mini-calendar__body { padding: 12px 14px 14px; overflow-y: auto; flex: 1 1 auto; }
 .mini-calendar__body.is-collapsed { display: none; }
 
 /* 紧凑折叠：仅显示头部时减小手柄下边距由 body 控制，body 隐藏即可 */
