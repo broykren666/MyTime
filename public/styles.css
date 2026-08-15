@@ -918,7 +918,14 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   color: var(--text);
   letter-spacing: .03em;
   line-height: 1.2;
-  margin-bottom: 10px;
+}
+.mc-time-line {
+  margin: 3px 0 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .02em;
 }
 /* 胶囊组：星期 / 星座 / 工作 */
 .mc-pills {

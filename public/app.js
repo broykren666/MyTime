@@ -1142,6 +1142,7 @@ function submitTask(e) {
 
 /* ---------- 计时器 ---------- */
 function updateTimers() {
+  fillTimeLine();
   const now = Date.now();
   tasks.forEach(task => {
     const cell = timerCells.get(task.id);
@@ -1527,6 +1528,43 @@ function startOfDay(date) {
 /* ---------- 今日公历/农历/节气/节日 ---------- */
 const WEEK_CN = ["星期日","星期一","星期二","星期三","星期四","星期五","星期六"];
 
+/* 时辰（十二地支）：子时 23–1、丑时 1–3 … 亥时 21–23 */
+const SHICHEN = ["子时","丑时","寅时","卯时","辰时","巳时","午时","未时","申时","酉时","戌时","亥时"];
+function shichenOf(hour) {
+  return SHICHEN[Math.floor((hour + 1) % 24 / 2)];
+}
+
+/* 时辰内的相对分钟（每时辰 2 小时，起点：子时=23、丑时=1、… 亥时=21） */
+function shichenRelMin(hour, minute) {
+  const idx = Math.floor((hour + 1) % 24 / 2);   // 0=子 … 11=亥
+  const startHour = (idx * 2 + 23) % 24;          // 该时辰起始自然小时
+  let rel = (hour - startHour) * 60 + minute;
+  if (rel < 0) rel += 120;                         // 跨零点修正（子时 0–1 段）
+  return rel;
+}
+
+/* 传统「X时N刻」（通俗）与「X初/正N刻」（古法）双格式：
+   每时辰 8 刻，每刻 15 分钟；前 4 刻为「初」、后 4 刻为「正」。
+   例：第1刻=初一刻，第5刻=正初刻，第7刻=正三刻。 */
+const KE_CN = ["", "一", "二", "三", "四", "五", "六", "七", "八"];
+function shichenKe(hour, minute) {
+  const sc = shichenOf(hour);
+  const ke = Math.floor(shichenRelMin(hour, minute) / 15) + 1; // 1..8
+  const popular = sc + KE_CN[ke] + "刻";                         // 通俗：巳时七刻
+  const ancient = sc.charAt(0) + (ke <= 4 ? "初" : "正") + KE_CN[(ke - 1) % 4 + 1] + "刻"; // 古法：巳正三刻
+  return `${popular}（${ancient}）`;
+}
+
+/* 填充「当前时间 + 时辰」行（年份日历日期行下方），精确到秒 */
+function fillTimeLine() {
+  const el = document.getElementById("mcTimeLine");
+  if (!el) return;
+  const now = new Date();
+  const pad = n => String(n).padStart(2, "0");
+  const hh = pad(now.getHours()), mm = pad(now.getMinutes()), ss = pad(now.getSeconds());
+  el.textContent = `${hh}:${mm}:${ss} | ${shichenKe(now.getHours(), now.getMinutes())}`;
+}
+
 /* ---------- 节假日状态（数据来自 vendor/holidays.js，方便手动维护） ---------- */
 // 数据由 window.HOLIDAY_DATA 提供（含当年 days 表）。
 // type: 2 法定假日 / 3 调休补班（上班）/ 其余按周末(1)或工作日(0)判断。
@@ -1658,6 +1696,7 @@ function renderMiniCalendar() {
   }
 
   elDateLine.textContent = `${y}年${m}月${d}日`;
+  fillTimeLine();
   elWeek.textContent = week;
   elWeek.className = "mc-pill mc-pill--week mc-pill--rainbow-" + now.getDay();
   elXz.textContent = `${solar.getXingZuo()}座`;
