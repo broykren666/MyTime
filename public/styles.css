@@ -1063,13 +1063,20 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   gap: 6px;
 }
 .mc-event {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
   font-size: 0.82rem;
   line-height: 1.35;
   padding: 2px 0;
   color: var(--text);
 }
 .mc-event__tail {
+  flex: none;
+  margin-left: auto;
   color: var(--text-soft);
+  white-space: nowrap;
 }
 .mc-event--today {
   font-weight: 700;

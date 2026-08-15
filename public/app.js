@@ -1763,7 +1763,6 @@ function renderMiniCalendar() {
       const icon = e.type === "jieqi" ? "🌿" : e.type === "lunar" ? "🌸" : "🎉";
       div.appendChild(document.createTextNode(`${icon} ${e.text}`));
       if (e.days !== 0) {
-        div.appendChild(document.createTextNode(" | "));
         const tail = document.createElement("span");
         tail.className = "mc-event__tail";
         tail.textContent = `${e.days}天后`;
