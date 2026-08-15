@@ -1061,6 +1061,7 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   display: flex;
   flex-direction: column;
   gap: 6px;
+  width: 100%;
 }
 .mc-event {
   display: flex;
