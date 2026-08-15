@@ -2214,16 +2214,27 @@ els.memorialCalendarToggle.querySelectorAll(".seg-item").forEach(btn =>
   })
 );
 
+/* 切换到「此刻」时，把日期/时间框刷新为当前最新时刻 */
+function fillNowAnchor(type) {
+  const now = new Date();
+  const dateEl = type === "countdown" ? els.anchorDateCountdown : els.anchorDateCron;
+  const timeEl = type === "countdown" ? els.anchorTimeCountdown : els.anchorTimeCron;
+  dateEl.value = todayStr(now);
+  timeEl.value = now.toTimeString().slice(0, 8);
+}
+
 /* 锚定模式切换（此刻 / 锚定） */
 els.anchorSegCountdown.querySelectorAll(".seg-item").forEach(btn =>
   btn.addEventListener("click", () => {
     formAnchorModeCountdown = btn.dataset.anchor;
+    if (formAnchorModeCountdown === "now") fillNowAnchor("countdown");
     syncAnchorUI();
   })
 );
 els.anchorSegCron.querySelectorAll(".seg-item").forEach(btn =>
   btn.addEventListener("click", () => {
     formAnchorModeCron = btn.dataset.anchor;
+    if (formAnchorModeCron === "now") fillNowAnchor("cron");
     syncAnchorUI();
   })
 );
