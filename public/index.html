@@ -23,7 +23,8 @@
         if (raw) {
           var p = JSON.parse(raw);
           if (p && typeof p.x === "number" && typeof p.y === "number") {
-            var s = ".mini-calendar{left:" + p.x + "px;top:" + p.y + "px;right:auto;}";
+            // 仅桌面端恢复拖动位置；手机端 (.mini-calendar{display:none}) 不应被此内联规则覆盖
+            var s = "@media (min-width:561px){.mini-calendar{left:" + p.x + "px;top:" + p.y + "px;right:auto;}}";
             var style = document.createElement("style");
             style.id = "mc-pos-restore";
             style.textContent = s;
