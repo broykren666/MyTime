@@ -164,6 +164,7 @@
           <span class="field-label">任务类型</span>
           <div class="seg" id="typeSeg">
             <button type="button" class="seg-item is-active" data-type="countdown">倒计时</button>
+            <button type="button" class="seg-item" data-type="stopwatch">正计时</button>
             <button type="button" class="seg-item" data-type="birthday">纪念日</button>
             <button type="button" class="seg-item" data-type="memorial">倒数日</button>
             <button type="button" class="seg-item" data-type="fixedday">固定日</button>
@@ -200,6 +201,24 @@
             <div class="anchor-datetime-controls">
               <input type="date" id="anchorDateCountdown" class="input anchor-date" />
               <input type="time" id="anchorTimeCountdown" class="input anchor-time" step="1" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 正计时类型输入区 -->
+        <div class="field type-panel" id="stopwatchField" hidden>
+          <div class="field-label-row">
+            <span class="field-label">设置正计时</span>
+            <div class="seg calendar-seg anchor-seg" id="anchorSegStopwatch">
+              <button type="button" class="seg-item is-active" data-anchor="now">此刻</button>
+              <button type="button" class="seg-item" data-anchor="anchored">锚定</button>
+            </div>
+          </div>
+          <div class="anchor-datetime" id="anchorDatetimeStopwatch" hidden>
+            <span class="field-label anchor-datetime-label">起始时刻</span>
+            <div class="anchor-datetime-controls">
+              <input type="date" id="anchorDateStopwatch" class="input anchor-date" />
+              <input type="time" id="anchorTimeStopwatch" class="input anchor-time" step="1" />
             </div>
           </div>
         </div>

@@ -4,7 +4,7 @@
 const STORAGE_KEY = "mytime_tasks";
 const UNIT_LABEL = { year: "年", month: "月", week: "周", day: "天", hour: "时", minute: "分" };
 // 任务类型显示名称（与弹窗内 typeSeg 的 data-type 对应）
-const TYPE_LABEL = { countdown: "倒计时", birthday: "纪念日", memorial: "倒数日", fixedday: "固定日", cron: "Cron" };
+const TYPE_LABEL = { countdown: "倒计时", stopwatch: "正计时", birthday: "纪念日", memorial: "倒数日", fixedday: "固定日", cron: "Cron" };
 // 兼容旧数据：曾经用 "date" 表示固定日期，统一映射为 memorial（纪念）
 const TYPE_ALIAS = { date: "memorial" };
 
@@ -31,6 +31,7 @@ let formCalendarTypeMemorial = "solar";
 /* 锚定模式（倒计时 / Cron 各自的临时状态）：now=此刻，anchored=锚定 */
 let formAnchorModeCountdown = "now";
 let formAnchorModeCron = "now";
+let formAnchorModeStopwatch = "now";
 
 function normalizeType(t) {
   return TYPE_ALIAS[t] || t;
@@ -142,6 +143,11 @@ const els = {
   anchorDatetimeCron: document.getElementById("anchorDatetimeCron"),
   anchorDateCron: document.getElementById("anchorDateCron"),
   anchorTimeCron: document.getElementById("anchorTimeCron"),
+  stopwatchField: document.getElementById("stopwatchField"),
+  anchorSegStopwatch: document.getElementById("anchorSegStopwatch"),
+  anchorDatetimeStopwatch: document.getElementById("anchorDatetimeStopwatch"),
+  anchorDateStopwatch: document.getElementById("anchorDateStopwatch"),
+  anchorTimeStopwatch: document.getElementById("anchorTimeStopwatch"),
   dailyQuote: document.getElementById("dailyQuote"),
   dqText: document.getElementById("dqText"),
   dqFrom: document.getElementById("dqFrom"),
@@ -153,6 +159,7 @@ const segItems = {
   unitItems: els.unitSeg.querySelectorAll(".seg-item"),
   anchorCdnItems: els.anchorSegCountdown.querySelectorAll(".seg-item"),
   anchorCronItems: els.anchorSegCron.querySelectorAll(".seg-item"),
+  anchorStopwatchItems: els.anchorSegStopwatch.querySelectorAll(".seg-item"),
 };
 
 /* 当前表单选择的类型 / 单位（临时状态） */
@@ -559,12 +566,19 @@ function opBtn(label, title, disabled, onClick, danger) {
 
 function formatTime(task) {
   if (task.type === "countdown") return `${task.cdValue} ${UNIT_LABEL[task.cdUnit] || ""}`;
+  if (task.type === "stopwatch") return formatStopwatchTime(task);
   if (task.type === "birthday") return formatBirthdayTime(task);
   if (task.type === "cron") return task.cronValue || "—";
   if (task.type === "fixedday") {
     return `每月 ${task.fixeddayValue || "1"} 日`;
   }
   return formatMemorialTime(task);
+}
+
+/* 格式化正计时的起点展示（设定值列） */
+function formatStopwatchTime(task) {
+  if (task.anchor) return fmtDate(task.anchor);
+  return "此刻起";
 }
 
 /* 格式化纪念日/倒数日的日期展示 */
@@ -671,6 +685,11 @@ function openModal(id) {
       const ad = task.anchor ? new Date(task.anchor) : new Date();
       els.anchorDateCron.value = todayStr(ad);
       els.anchorTimeCron.value = ad.toTimeString().slice(0, 8);
+    } else if (task.type === "stopwatch") {
+      formAnchorModeStopwatch = task.anchor ? "anchored" : "now";
+      const ad = task.anchor ? new Date(task.anchor) : new Date();
+      els.anchorDateStopwatch.value = todayStr(ad);
+      els.anchorTimeStopwatch.value = ad.toTimeString().slice(0, 8);
     } else {
       if (task.calendarType === "lunar") {
         formCalendarTypeMemorial = "lunar";
@@ -695,6 +714,7 @@ function openModal(id) {
     // 锚定模式默认「此刻」，起始时刻框预填此刻
     formAnchorModeCountdown = "now";
     formAnchorModeCron = "now";
+    formAnchorModeStopwatch = "now";
     const now = new Date();
     const nowDate = todayStr(now);
     const nowTime = now.toTimeString().slice(0, 8);
@@ -702,6 +722,8 @@ function openModal(id) {
     els.anchorTimeCountdown.value = nowTime;
     els.anchorDateCron.value = nowDate;
     els.anchorTimeCron.value = nowTime;
+    els.anchorDateStopwatch.value = nowDate;
+    els.anchorTimeStopwatch.value = nowTime;
   }
 
   els.modal.hidden = false;
@@ -992,13 +1014,14 @@ function syncTypeUI() {
     b.disabled = locked;
   });
   // 根据任务类型动态显示对应输入区，隐藏其它（hidden 属性 + 淡入过渡）
-  const fieldKey = { countdown: "cd", birthday: "birthday", memorial: "memorial", fixedday: "fixedday", cron: "cron" };
+  const fieldKey = { countdown: "cd", stopwatch: "stopwatch", birthday: "birthday", memorial: "memorial", fixedday: "fixedday", cron: "cron" };
   const show = type => {
     const el = els[fieldKey[type] + "Field"];
     el.hidden = formType !== type;
     el.classList.toggle("is-shown", formType === type);
   };
   show("countdown");
+  show("stopwatch");
   show("birthday");
   show("memorial");
   show("fixedday");
@@ -1010,6 +1033,8 @@ function syncTypeUI() {
   els.memorialInput.disabled = formType !== "memorial";
   els.fixeddayInput.disabled = formType !== "fixedday";
   els.cronInput.disabled = formType !== "cron";
+  els.anchorDateStopwatch.disabled = !(formType === "stopwatch" && formAnchorModeStopwatch === "anchored");
+  els.anchorTimeStopwatch.disabled = !(formType === "stopwatch" && formAnchorModeStopwatch === "anchored");
   // 同步农历面板
   syncCalendarTypeUI("birthday");
   syncCalendarTypeUI("memorial");
@@ -1025,11 +1050,12 @@ function syncUnitUI() {
 
 /* 同步锚定分段器高亮，并按类型显隐对应的起始时刻框 */
 function syncAnchorUI() {
-  const segMap = { countdown: segItems.anchorCdnItems, cron: segItems.anchorCronItems };
-  const boxMap = { countdown: els.anchorDatetimeCountdown, cron: els.anchorDatetimeCron };
-  ["countdown", "cron"].forEach(type => {
+  const segMap = { countdown: segItems.anchorCdnItems, cron: segItems.anchorCronItems, stopwatch: segItems.anchorStopwatchItems };
+  const boxMap = { countdown: els.anchorDatetimeCountdown, cron: els.anchorDatetimeCron, stopwatch: els.anchorDatetimeStopwatch };
+  const modeMap = { countdown: formAnchorModeCountdown, cron: formAnchorModeCron, stopwatch: formAnchorModeStopwatch };
+  ["countdown", "cron", "stopwatch"].forEach(type => {
     const items = segMap[type];
-    const mode = type === "countdown" ? formAnchorModeCountdown : formAnchorModeCron;
+    const mode = modeMap[type];
     items.forEach(b =>
       b.classList.toggle("is-active", b.dataset.anchor === mode)
     );
@@ -1037,8 +1063,10 @@ function syncAnchorUI() {
     const visible = formType === type && mode === "anchored";
     box.hidden = !visible;
     // 仅当前类型且锚定时启用日期框，避免隐藏必填校验问题
-    const dateEl = type === "countdown" ? els.anchorDateCountdown : els.anchorDateCron;
-    const timeEl = type === "countdown" ? els.anchorTimeCountdown : els.anchorTimeCron;
+    let dateEl, timeEl;
+    if (type === "countdown") { dateEl = els.anchorDateCountdown; timeEl = els.anchorTimeCountdown; }
+    else if (type === "cron") { dateEl = els.anchorDateCron; timeEl = els.anchorTimeCron; }
+    else { dateEl = els.anchorDateStopwatch; timeEl = els.anchorTimeStopwatch; }
     dateEl.disabled = !visible;
     timeEl.disabled = !visible;
   });
@@ -1101,6 +1129,13 @@ function submitTask(e) {
     // 锚定模式（此刻=不写 anchor；锚定=时间轴原点，用于周期对齐与补跑判断）
     if (formAnchorModeCron === "anchored") {
       const ts = anchorTimestamp(els.anchorDateCron.value, els.anchorTimeCron.value);
+      if (ts !== null) base.anchor = ts;
+    }
+  } else if (formType === "stopwatch") {
+    base.createdAt = Date.now();
+    // 锚定模式（此刻=不写 anchor，沿用 createdAt；锚定=起始时刻）
+    if (formAnchorModeStopwatch === "anchored") {
+      const ts = anchorTimestamp(els.anchorDateStopwatch.value, els.anchorTimeStopwatch.value);
       if (ts !== null) base.anchor = ts;
     }
   } else {
@@ -1191,6 +1226,13 @@ function prevAnnualOccurrence(nextTs, nowTs) {
   return prev.getTime();
 }
 
+// 当天已过去时间占比（0点=0，24点→1），用于正计时甘特图循环进度
+function todayProgress(now) {
+  const d = new Date(now);
+  const secOfDay = d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds() + d.getMilliseconds() / 1000;
+  return Math.min(1, secOfDay / 86400);
+}
+
 function computeTimer(task, now) {
   if (task.type === "countdown") {
     // 有锚定时以 anchor 为起点，否则以 createdAt（保存时刻=此刻）为起点
@@ -1198,7 +1240,7 @@ function computeTimer(task, now) {
     const end = start + task.cdValue * unitMs(task.cdUnit, start);
     const total = task.cdValue * unitMs(task.cdUnit, start) || 1;
     const remain = end - now;
-    if (remain <= 0) return { text: "已结束", cls: "is-done", progress: 0, targetLabel: fmtDate(end) };
+    if (remain <= 0) return { text: "已结束 | " + fmtCountdown(now - end), cls: "is-done", progress: 0, targetLabel: fmtDate(end) };
 
     // 进度 = 剩余占比（从左往右随时间递减）
     const progress = Math.max(0, Math.min(1, (end - now) / (end - start)));
@@ -1207,6 +1249,19 @@ function computeTimer(task, now) {
       cls: progressLevelCls(progress),
       progress,
       targetLabel: fmtDate(end) + (task.anchor ? " · 起 " + fmtDate(start) : "")
+    };
+  }
+
+  if (task.type === "stopwatch") {
+    const start = task.anchor || task.createdAt || now;
+    const text = start > now
+      ? "未开始 | " + fmtCountdown(start - now)
+      : fmtCountdown(now - start);
+    return {
+      text,
+      cls: progressLevelCls(todayProgress(now)),
+      progress: todayProgress(now),
+      targetLabel: fmtDate(start)
     };
   }
 
@@ -2251,8 +2306,10 @@ els.memorialCalendarToggle.querySelectorAll(".seg-item").forEach(btn =>
 /* 切换到「此刻」时，把日期/时间框刷新为当前最新时刻 */
 function fillNowAnchor(type) {
   const now = new Date();
-  const dateEl = type === "countdown" ? els.anchorDateCountdown : els.anchorDateCron;
-  const timeEl = type === "countdown" ? els.anchorTimeCountdown : els.anchorTimeCron;
+  let dateEl, timeEl;
+  if (type === "countdown") { dateEl = els.anchorDateCountdown; timeEl = els.anchorTimeCountdown; }
+  else if (type === "cron") { dateEl = els.anchorDateCron; timeEl = els.anchorTimeCron; }
+  else { dateEl = els.anchorDateStopwatch; timeEl = els.anchorTimeStopwatch; }
   dateEl.value = todayStr(now);
   timeEl.value = now.toTimeString().slice(0, 8);
 }
@@ -2269,6 +2326,13 @@ els.anchorSegCron.querySelectorAll(".seg-item").forEach(btn =>
   btn.addEventListener("click", () => {
     formAnchorModeCron = btn.dataset.anchor;
     if (formAnchorModeCron === "now") fillNowAnchor("cron");
+    syncAnchorUI();
+  })
+);
+els.anchorSegStopwatch.querySelectorAll(".seg-item").forEach(btn =>
+  btn.addEventListener("click", () => {
+    formAnchorModeStopwatch = btn.dataset.anchor;
+    if (formAnchorModeStopwatch === "now") fillNowAnchor("stopwatch");
     syncAnchorUI();
   })
 );
