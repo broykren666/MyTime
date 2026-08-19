@@ -407,6 +407,16 @@
     </div>
   </div>
 
-  <script src="app.js" defer></script>
+  <!-- 业务脚本：按依赖顺序加载（js/ 下 9 个模块 + 根目录入口 main.js） -->
+  <script src="js/core.js" defer></script>
+  <script src="js/storage.js" defer></script>
+  <script src="js/render.js" defer></script>
+  <script src="js/modal.js" defer></script>
+  <script src="js/data-manage.js" defer></script>
+  <script src="js/timers.js" defer></script>
+  <script src="js/bazi.js" defer></script>
+  <script src="js/minicalendar.js" defer></script>
+  <script src="js/theme-quote.js" defer></script>
+  <script src="main.js" defer></script>
 </body>
 </html>

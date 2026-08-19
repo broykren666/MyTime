@@ -22,7 +22,17 @@
 MyTime/
 ├── public/                  # 静态站点构建输出目录（Pages 部署根）
 │   ├── index.html           # 页面结构
-│   ├── app.js               # 全部交互 / 计时 / 农历 / 八字逻辑
+│   ├── main.js              # 入口脚本：事件绑定 + 启动初始化
+│   ├── js/                  # 按功能域拆分的模块脚本（按依赖顺序加载）
+│   │   ├── core.js          # 核心常量与通用工具
+│   │   ├── storage.js       # 数据层（localStorage 读写）与 DOM 引用
+│   │   ├── render.js        # 列表渲染与拖拽排序
+│   │   ├── modal.js         # 添加/修改任务弹窗与农历选择器
+│   │   ├── data-manage.js   # 数据导入导出
+│   │   ├── timers.js        # 计时计算（甘特图进度）
+│   │   ├── bazi.js          # 八字计算器
+│   │   ├── minicalendar.js  # 小日历 / 今日信息
+│   │   └── theme-quote.js   # 主题切换 / 每日一言 / 浏览器通知
 │   ├── styles.css           # 样式（含明/暗主题与甘特图）
 │   └── vendor/              # 第三方库（本地内置，无需联网）
 │       ├── croner.umd.min.js # Cron 解析（croner）
