@@ -2275,6 +2275,29 @@ els.typeSeg.querySelectorAll(".seg-item").forEach(b =>
     syncTypeUI();
   })
 );
+
+// PC 端鼠标拖拽平移类型标签（标签过多时无需依赖滚动条）
+(function enableTypeSegDragScroll() {
+  const el = els.typeSeg;
+  let down = false, startX = 0, startScroll = 0, moved = 0;
+  el.addEventListener("mousedown", e => {
+    down = true; moved = 0;
+    startX = e.pageX; startScroll = el.scrollLeft;
+  });
+  el.addEventListener("mousemove", e => {
+    if (!down) return;
+    const dx = e.pageX - startX;
+    moved = Math.max(moved, Math.abs(dx));
+    el.scrollLeft = startScroll - dx;
+  });
+  const end = () => { down = false; };
+  el.addEventListener("mouseup", end);
+  el.addEventListener("mouseleave", end);
+  // 拖拽距离超过阈值时，阻止误触发的标签 click
+  el.addEventListener("click", e => {
+    if (moved > 5) { e.preventDefault(); e.stopPropagation(); moved = 0; }
+  }, true);
+})();
 els.unitSeg.querySelectorAll(".seg-item").forEach(b =>
   b.addEventListener("click", () => {
     formUnit = b.dataset.unit;
