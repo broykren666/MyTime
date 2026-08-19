@@ -1226,13 +1226,6 @@ function prevAnnualOccurrence(nextTs, nowTs) {
   return prev.getTime();
 }
 
-// 当天已过去时间占比（0点=0，24点→1），用于正计时甘特图循环进度
-function todayProgress(now) {
-  const d = new Date(now);
-  const secOfDay = d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds() + d.getMilliseconds() / 1000;
-  return Math.min(1, secOfDay / 86400);
-}
-
 function computeTimer(task, now) {
   if (task.type === "countdown") {
     // 有锚定时以 anchor 为起点，否则以 createdAt（保存时刻=此刻）为起点
@@ -1254,15 +1247,17 @@ function computeTimer(task, now) {
 
   if (task.type === "stopwatch") {
     const start = task.anchor || task.createdAt || now;
+    const elapsedMs = now - start;
+    const days = Math.floor(elapsedMs / 86400000);
     const text = start > now
       ? "未开始 | " + fmtCountdown(start - now)
-      : fmtCountdown(now - start);
-    return {
-      text,
-      cls: progressLevelCls(todayProgress(now)),
-      progress: todayProgress(now),
-      targetLabel: fmtDate(start)
-    };
+      : (days > 0 ? "已 " + days + " 天 | " + fmtCountdown(elapsedMs) : fmtCountdown(elapsedMs));
+    if (start > now) {
+      // 未来起点：显示在甘特图中但进度条为空，仅展示「未开始 | 剩余时长」
+      return { text, cls: "", progress: 0, targetLabel: fmtDate(start) };
+    }
+    // 进行中：显示在甘特图中但进度条为空，仅展示文本 xd xh xm xs
+    return { text: fmtCountdown(elapsedMs), cls: "", progress: 0, targetLabel: "" };
   }
 
   if (task.type === "birthday") {
