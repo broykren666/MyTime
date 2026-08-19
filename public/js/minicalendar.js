@@ -354,10 +354,15 @@ function initMcToggles() {
 
   applyMcCollapse();
 
-  // 绑定八字计算图标点击事件（innerHTML 每次刷新都会重建按钮）
-  const baziCalcBtn = document.getElementById("baziCalcBtn");
-  if (baziCalcBtn) {
-    baziCalcBtn.onclick = openBaziCalculator;
+  // 八字计算图标每次 renderMiniCalendar 都会被 innerHTML 重建，
+  // 因此不能用 onclick 直接绑在按钮上（重建后绑定会丢失）。
+  // 改用事件委托绑在稳定的父容器 elMeta 上，重建后依然有效。
+  const elMeta = document.getElementById("mcMeta");
+  if (elMeta && !elMeta.dataset.baziDelegated) {
+    elMeta.dataset.baziDelegated = "1";
+    elMeta.addEventListener("click", e => {
+      if (e.target && e.target.id === "baziCalcBtn") openBaziCalculator();
+    });
   }
 }
 
