@@ -204,7 +204,8 @@ tr.dragging { opacity: .45; }
 tr.drag-over td { box-shadow: inset 0 2px 0 var(--primary); }
 tr:hover .drag-handle { color: var(--primary-strong); }
 .col-index { width: 30px; color: var(--text-soft); }
-.col-type { width: 60px; color: var(--text-soft); white-space: nowrap; }
+.col-type { width: auto; color: var(--text-soft); white-space: nowrap; }
+.col-type .type-icon { margin-right: 4px; font-size: 0.95em; }
 .col-ops { width: 200px; }
 .idx-badge {
   display: inline-flex; align-items: center; justify-content: center;
@@ -361,6 +362,24 @@ tr:hover .drag-handle { color: var(--primary-strong); }
 
 /* ===== 标签式单选 ===== */
 .seg { display: inline-flex; background: #F1F5F9; border-radius: var(--radius-sm); padding: 4px; gap: 4px; }
+
+/* 任务类型切换：标签过多时允许横向滚动（PC 与移动端通用），避免最右标签被挤出弹窗 */
+.modal-body, .field { min-width: 0; }   /* 解除 flex 子项默认 min-width:auto，保证滚动容器可被约束 */
+#typeSeg {
+  display: flex;
+  flex-wrap: nowrap;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  cursor: grab;                     /* 提示可拖拽滚动（PC 端） */
+  scrollbar-width: none;            /* Firefox 隐藏滚动条 */
+}
+#typeSeg:active { cursor: grabbing; }
+#typeSeg::-webkit-scrollbar { display: none; }  /* WebKit 隐藏滚动条 */
+#typeSeg .seg-item { flex: 0 0 auto; }          /* 不收缩、不换行，保持原尺寸 */
+
 [data-theme="dark"] .seg { background: #0F172A; }
 .seg-item {
   border: none; background: transparent; cursor: pointer; font-family: inherit;
@@ -368,6 +387,7 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   padding: 7px 16px; border-radius: 8px; transition: all .18s ease; white-space: nowrap;
 }
 .seg-item:hover { color: var(--primary-strong); }
+.seg-item .type-icon { margin-right: 4px; }
 .seg-item.is-active {
   background: #fff; color: var(--primary-strong);
   box-shadow: 0 2px 8px rgba(31, 41, 55, 0.12); font-weight: 600;
@@ -615,22 +635,13 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   .countdown-row { flex-direction: column; }
   .cd-value { flex: 1; }
 
-  /* ---- 任务类型切换：移动端改为横向滚动，便于扩展更多类型 ---- */
+  /* ---- 任务类型切换：移动端触控增强（横向滚动基础样式已提升为全局） ---- */
   #typeSeg {
-    display: flex;
-    width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;        /* Firefox 隐藏滚动条 */
     scroll-snap-type: x proximity;
     padding-bottom: 2px;           /* 避免阴影被裁切 */
   }
-  #typeSeg::-webkit-scrollbar { display: none; }  /* WebKit 隐藏滚动条 */
-  #typeSeg .seg-item {
-    flex: 0 0 auto;               /* 不收缩、不换行，保持原尺寸 */
-    scroll-snap-align: start;
-  }
+  #typeSeg .seg-item { scroll-snap-align: start; }
 
   /* ---- 解除桌面端强加的高度/滚动限制，修正地址栏遮挡 ---- */
   body {
