@@ -1435,7 +1435,7 @@ function computeTimer(task, now) {
       const progress = 1 - progressBetween(from, target, now);
       return { text: fmtCountdown(target - now), cls: progressLevelCls(progress), progress, targetLabel: fmtDate(target) };
     }
-    return { text: `已过期 ${days}天`, cls: "is-over", progress: 0, targetLabel: fmtDate(target) };
+    return { text: `已过期 | ${days}天`, cls: "is-over", progress: 0, targetLabel: fmtDate(target) };
   }
   return { text: "", cls: "", progress: null, targetLabel: "" };
 }
