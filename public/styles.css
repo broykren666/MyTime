@@ -204,7 +204,8 @@ tr.dragging { opacity: .45; }
 tr.drag-over td { box-shadow: inset 0 2px 0 var(--primary); }
 tr:hover .drag-handle { color: var(--primary-strong); }
 .col-index { width: 30px; color: var(--text-soft); }
-.col-type { width: 60px; color: var(--text-soft); white-space: nowrap; }
+.col-type { width: auto; color: var(--text-soft); white-space: nowrap; }
+.col-type .type-icon { margin-right: 4px; font-size: 0.95em; }
 .col-ops { width: 200px; }
 .idx-badge {
   display: inline-flex; align-items: center; justify-content: center;
@@ -386,6 +387,7 @@ tr:hover .drag-handle { color: var(--primary-strong); }
   padding: 7px 16px; border-radius: 8px; transition: all .18s ease; white-space: nowrap;
 }
 .seg-item:hover { color: var(--primary-strong); }
+.seg-item .type-icon { margin-right: 4px; }
 .seg-item.is-active {
   background: #fff; color: var(--primary-strong);
   box-shadow: 0 2px 8px rgba(31, 41, 55, 0.12); font-weight: 600;
