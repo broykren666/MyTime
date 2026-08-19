@@ -6,7 +6,7 @@ const UNIT_LABEL = { year: "年", month: "月", week: "周", day: "天", hour: "
 // 任务类型显示名称（与弹窗内 typeSeg 的 data-type 对应）
 const TYPE_LABEL = { countdown: "倒计时", stopwatch: "正计时", birthday: "纪念日", memorial: "倒数日", fixedday: "固定日", cron: "Cron" };
 // 任务类型图标（emoji，无需额外依赖，便于快速识别）
-const TYPE_ICON = { countdown: "⏳", stopwatch: "⏱️", birthday: "🎉", memorial: "🗓️", fixedday: "📌", cron: "🔁" };
+const TYPE_ICON = { countdown: "⏳", stopwatch: "🕗", birthday: "🎉", memorial: "🗓️", fixedday: "📌", cron: "🔁" };
 // 兼容旧数据：曾经用 "date" 表示固定日期，统一映射为 memorial（纪念）
 const TYPE_ALIAS = { date: "memorial" };
 
